@@ -51,6 +51,8 @@ jobs:
 
             - name: 📦 Package
               run: |
+                  echo "GOOGLE_CLIENT_ID length: ${#GOOGLE_CLIENT_ID}"
+                  echo "GOOGLE_CLIENT_SECRET length: ${#GOOGLE_CLIENT_SECRET}"
                   vsce package -o ./${{ github.event.repository.name}}.vsix
               env:
                   GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}

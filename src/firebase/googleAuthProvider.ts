@@ -121,6 +121,14 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
     }
 
     private async _performOAuthFlow(scopes: string[]): Promise<{ accessToken: string; refreshToken: string }> {
+        logger.debug(`Starting OAuth flow with client_id length: ${GOOGLE_CLIENT_ID.length}, secret length: ${GOOGLE_CLIENT_SECRET.length}`);
+        logger.debug(`OAuth client_id prefix: ${GOOGLE_CLIENT_ID.substring(0, 20)}...`);
+
+        if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.length < 10) {
+            logger.error("GOOGLE_CLIENT_ID is empty or invalid");
+            throw new Error("OAuth Client ID is not configured");
+        }
+
         const { port, redirectUri, serverPromise } = await this._startCallbackServer();
         const state = crypto.randomUUID();
         const codeVerifier = crypto.randomBytes(32).toString("base64url");
@@ -140,9 +148,11 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
         authUrl.searchParams.set("code_challenge", codeChallenge);
         authUrl.searchParams.set("code_challenge_method", "S256");
 
+        logger.debug(`Opening OAuth URL on port ${port}`);
         await vscode.env.openExternal(vscode.Uri.parse(authUrl.toString()));
 
         const code = await serverPromise;
+        logger.debug(`Received authorization code, exchanging for tokens`);
 
         const tokenResponse = await fetch(TOKEN_URL, {
             method: "POST",
@@ -159,6 +169,7 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
 
         if (!tokenResponse.ok) {
             const errorText = await tokenResponse.text();
+            logger.error(`Token exchange failed: ${tokenResponse.status} - ${errorText}`);
             throw new Error(`Token exchange failed: ${errorText}`);
         }
 
@@ -168,9 +179,11 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
         };
 
         if (!tokens.refresh_token) {
+            logger.error("No refresh token received from OAuth flow");
             throw new Error("No refresh token received. Ensure access_type=offline and prompt=consent are set.");
         }
 
+        logger.info("OAuth token exchange successful");
         return { accessToken: tokens.access_token, refreshToken: tokens.refresh_token };
     }
 
