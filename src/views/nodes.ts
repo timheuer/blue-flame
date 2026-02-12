@@ -17,6 +17,7 @@ export class ConnectionNode extends BaseNode {
         return [
             new FirestoreGroupNode(this.connection),
             new AuthGroupNode(this.connection),
+            new StorageGroupNode(this.connection),
         ];
     }
 }
@@ -38,6 +39,111 @@ export class AuthGroupNode extends BaseNode {
         super("Authentication", vscode.TreeItemCollapsibleState.Collapsed);
         this.contextValue = "authGroup";
         this.iconPath = new vscode.ThemeIcon("shield");
+    }
+
+    async getChildren(): Promise<BaseNode[]> {
+        return [];
+    }
+}
+
+export class StorageGroupNode extends BaseNode {
+    constructor(
+        public readonly connection: Connection,
+        public readonly bucketName?: string
+    ) {
+        super("Storage", vscode.TreeItemCollapsibleState.Collapsed);
+        this.contextValue = "storageGroup";
+        this.iconPath = new vscode.ThemeIcon("archive");
+        this.tooltip = bucketName || `${connection.projectId}.firebasestorage.app`;
+    }
+
+    async getChildren(): Promise<BaseNode[]> {
+        return [];
+    }
+}
+
+export class StorageFolderNode extends BaseNode {
+    constructor(
+        public readonly connection: Connection,
+        public readonly folderPath: string,
+        public readonly folderName: string,
+        public readonly bucketName: string
+    ) {
+        super(folderName, vscode.TreeItemCollapsibleState.Collapsed);
+        this.contextValue = "storageFolder";
+        this.tooltip = `gs://${bucketName}/${folderPath}`;
+        this.iconPath = new vscode.ThemeIcon("folder");
+    }
+
+    async getChildren(): Promise<BaseNode[]> {
+        return [];
+    }
+}
+
+export class StorageFileNode extends BaseNode {
+    constructor(
+        public readonly connection: Connection,
+        public readonly filePath: string,
+        public readonly fileName: string,
+        public readonly bucketName: string,
+        public readonly size: number,
+        public readonly contentType: string
+    ) {
+        super(fileName, vscode.TreeItemCollapsibleState.None);
+        this.contextValue = "storageFile";
+        this.description = this.formatSize(size);
+        this.tooltip = `${filePath}\nSize: ${this.formatSize(size)}\nType: ${contentType}`;
+        this.iconPath = this.getIconForContentType(contentType);
+        this.command = {
+            command: "blue-flame.previewStorageFile",
+            title: "Preview File",
+            arguments: [this],
+        };
+    }
+
+    private formatSize(bytes: number): string {
+        if (bytes === 0) {
+            return "0 B";
+        }
+        const units = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return `${(bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
+    }
+
+    private getIconForContentType(contentType: string): vscode.ThemeIcon {
+        if (contentType.startsWith("image/")) {
+            return new vscode.ThemeIcon("file-media");
+        }
+        if (contentType.startsWith("video/")) {
+            return new vscode.ThemeIcon("device-camera-video");
+        }
+        if (contentType.startsWith("audio/")) {
+            return new vscode.ThemeIcon("unmute");
+        }
+        if (contentType.startsWith("text/") || contentType === "application/json") {
+            return new vscode.ThemeIcon("file-code");
+        }
+        if (contentType === "application/pdf") {
+            return new vscode.ThemeIcon("file-pdf");
+        }
+        return new vscode.ThemeIcon("file");
+    }
+
+    async getChildren(): Promise<BaseNode[]> {
+        return [];
+    }
+}
+
+export class LoadMoreStorageNode extends BaseNode {
+    constructor(
+        public readonly connection: Connection,
+        public readonly prefix: string,
+        public readonly bucketName: string,
+        public readonly pageToken: string
+    ) {
+        super("Load more...", vscode.TreeItemCollapsibleState.None);
+        this.contextValue = "loadMoreStorage";
+        this.iconPath = new vscode.ThemeIcon("ellipsis");
     }
 
     async getChildren(): Promise<BaseNode[]> {

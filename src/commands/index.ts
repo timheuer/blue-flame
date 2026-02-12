@@ -5,6 +5,7 @@ import { registerConnectionCommands } from "./connections";
 import { registerFirestoreCommands } from "./firestore";
 import { registerWebviewCommands } from "./webviews";
 import { registerAuthCommands } from "./auth";
+import { registerStorageCommands } from "./storage";
 
 export function registerAllCommands(
     context: vscode.ExtensionContext,
@@ -15,4 +16,5 @@ export function registerAllCommands(
     registerFirestoreCommands(context, treeProvider);
     registerWebviewCommands(context);
     registerAuthCommands(context, treeProvider);
+    registerStorageCommands(context, treeProvider);
 }

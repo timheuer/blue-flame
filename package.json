@@ -1,7 +1,7 @@
 {
   "name": "blue-flame",
   "displayName": "Blue Flame",
-  "description": "Browse, edit, and manage Firestore databases and Firebase Authentication users",
+  "description": "Browse, edit, and manage Firestore databases, Firebase Authentication users, and Firebase Storage",
   "version": "0.0.0-placeholder",
   "author": {
     "name": "Tim Heuer",
@@ -32,7 +32,9 @@
     "nosql",
     "database",
     "authentication",
-    "firebase auth"
+    "firebase auth",
+    "firebase storage",
+    "cloud storage"
   ],
   "activationEvents": [
     "onView:blueFlame.firestoreExplorer",
@@ -232,6 +234,63 @@
         "title": "Refresh Users",
         "icon": "$(refresh)",
         "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshStorageGroup",
+        "title": "Refresh Storage",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshStorageFolder",
+        "title": "Refresh Folder",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.loadMoreStorage",
+        "title": "Load More Files",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.deleteStorageFile",
+        "title": "Delete File",
+        "icon": "$(trash)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.deleteStorageFolder",
+        "title": "Delete Folder",
+        "icon": "$(trash)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.copyStorageFileUrl",
+        "title": "Copy gs:// URL",
+        "icon": "$(copy)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.copyStoragePublicUrl",
+        "title": "Copy Public URL",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.copyStorageFolderPath",
+        "title": "Copy Folder Path",
+        "icon": "$(copy)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.previewStorageFile",
+        "title": "Preview File",
+        "icon": "$(eye)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.getStorageFileMetadata",
+        "title": "View Metadata",
+        "category": "Blue Flame"
       }
     ],
     "menus": {
@@ -358,6 +417,61 @@
         {
           "command": "blue-flame.loadMoreUsers",
           "when": "viewItem == loadMoreUsers"
+        },
+        {
+          "command": "blue-flame.refreshStorageGroup",
+          "when": "viewItem == storageGroup",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.refreshStorageGroup",
+          "when": "viewItem == storageGroup"
+        },
+        {
+          "command": "blue-flame.refreshStorageFolder",
+          "when": "viewItem == storageFolder",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.refreshStorageFolder",
+          "when": "viewItem == storageFolder"
+        },
+        {
+          "command": "blue-flame.copyStorageFolderPath",
+          "when": "viewItem == storageFolder"
+        },
+        {
+          "command": "blue-flame.deleteStorageFolder",
+          "when": "viewItem == storageFolder"
+        },
+        {
+          "command": "blue-flame.previewStorageFile",
+          "when": "viewItem == storageFile",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.previewStorageFile",
+          "when": "viewItem == storageFile"
+        },
+        {
+          "command": "blue-flame.copyStorageFileUrl",
+          "when": "viewItem == storageFile"
+        },
+        {
+          "command": "blue-flame.copyStoragePublicUrl",
+          "when": "viewItem == storageFile"
+        },
+        {
+          "command": "blue-flame.getStorageFileMetadata",
+          "when": "viewItem == storageFile"
+        },
+        {
+          "command": "blue-flame.deleteStorageFile",
+          "when": "viewItem == storageFile"
+        },
+        {
+          "command": "blue-flame.loadMoreStorage",
+          "when": "viewItem == loadMoreStorage"
         }
       ]
     }

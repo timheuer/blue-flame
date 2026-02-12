@@ -4,7 +4,8 @@ export type ExtensionToWebviewMessage =
     | DocumentLoadedMessage
     | SaveResultMessage
     | UserLoadedMessage
-    | UserSaveResultMessage;
+    | UserSaveResultMessage
+    | StorageFileLoadedMessage;
 
 export interface PageLoadedMessage {
     type: "pageLoaded";
@@ -59,6 +60,17 @@ export interface UserSaveResultMessage {
     error?: string;
 }
 
+export interface StorageFileLoadedMessage {
+    type: "storageFileLoaded";
+    filePath: string;
+    contentType: string;
+    size: number;
+    dataUrl?: string;
+    textContent?: string;
+    downloadUrl?: string;
+    error?: string;
+}
+
 // Webview → Extension messages
 export type WebviewToExtensionMessage =
     | LoadPageMessage
@@ -72,7 +84,9 @@ export type WebviewToExtensionMessage =
     | DeleteUserMessage
     | ToggleUserDisabledMessage
     | RevokeTokensMessage
-    | SaveCustomClaimsMessage;
+    | SaveCustomClaimsMessage
+    | LoadStorageFileMessage
+    | CopyStorageUrlMessage;
 
 export interface LoadPageMessage {
     type: "loadPage";
@@ -147,4 +161,14 @@ export interface SaveCustomClaimsMessage {
     type: "saveCustomClaims";
     uid: string;
     claims: Record<string, unknown> | null;
+}
+
+export interface LoadStorageFileMessage {
+    type: "loadStorageFile";
+    filePath: string;
+}
+
+export interface CopyStorageUrlMessage {
+    type: "copyStorageUrl";
+    urlType: "gs" | "public" | "download";
 }

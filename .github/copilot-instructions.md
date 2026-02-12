@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Blue Flame is a VS Code extension that provides a tree-based Firebase browser with webview panels for Firestore collection browsing, document editing, and Firebase Authentication user management. It connects to Google Cloud Firebase via `firebase-admin` and supports multiple simultaneous connections.
+Blue Flame is a VS Code extension that provides a tree-based Firebase browser with webview panels for Firestore collection browsing, document editing, Firebase Authentication user management, and Firebase Storage file browsing/preview. It connects to Google Cloud Firebase via `firebase-admin` and supports multiple simultaneous connections.
 
 ## Tech Stack
 
@@ -26,12 +26,13 @@ src/
 │   ├── adminAppFactory.ts    # App creation/caching/disposal
 │   ├── firestoreService.ts   # Firestore CRUD operations
 │   ├── authService.ts        # Firebase Auth user management
-│   └── storageService.ts     # Stub for future Firebase Storage
+│   └── storageService.ts     # Firebase Storage file operations
 ├── commands/                 # VS Code command handlers
 │   ├── index.ts              # registerAllCommands() aggregator
 │   ├── connections.ts        # Add/remove connection commands
 │   ├── firestore.ts          # Refresh, new/delete/view document
 │   ├── auth.ts               # User edit/create/delete/disable/enable
+│   ├── storage.ts            # Storage file operations (preview, delete, copy URL)
 │   └── webviews.ts           # Open collection table, edit document
 ├── views/                    # Tree view providers
 │   ├── nodes.ts              # TreeItem node types (Connection, Collection, Document, User, etc.)
@@ -42,10 +43,12 @@ src/
     ├── collectionTablePanel.ts
     ├── documentJsonPanel.ts
     ├── userEditorPanel.ts    # User details editor panel
+    ├── storagePreviewPanel.ts # Storage file preview panel
     └── media/                # Static assets served to webviews
         ├── collection-table.js
         ├── document-editor.js
         ├── user-editor.js
+        ├── storage-preview.js
         └── styles.css
 ```
 
@@ -72,14 +75,16 @@ src/
 ### Tree View
 - Hierarchy: Connection → FirestoreGroup → Collections → Documents → Subcollections.
 - Hierarchy: Connection → AuthGroup → Users.
+- Hierarchy: Connection → StorageGroup → Folders → Files.
 - `contextValue` on each node controls which context menu commands appear.
 - Pagination uses cursor-based `startAfter(lastDocId)` with a "Load more..." node for documents.
 - User pagination uses `pageToken` from Firebase Auth API with a "Load more..." node.
+- Storage pagination uses `nextPageToken` from Cloud Storage API with a "Load more..." node.
 
 ### Webview Communication
 - Uses discriminated union types in `protocol.ts` for type-safe messaging.
-- Extension → Webview: `PageLoaded`, `DocumentLoaded`, `SaveResult`, `UserLoaded`, `UserSaveResult`.
-- Webview → Extension: `LoadPage`, `OpenDocument`, `LoadDocument`, `SaveDocument`, `DeleteDocument`, `LoadUser`, `SaveUser`, `DeleteUser`, `ToggleUserDisabled`, `RevokeTokens`.
+- Extension → Webview: `PageLoaded`, `DocumentLoaded`, `SaveResult`, `UserLoaded`, `UserSaveResult`, `StorageFileLoaded`.
+- Webview → Extension: `LoadPage`, `OpenDocument`, `LoadDocument`, `SaveDocument`, `DeleteDocument`, `LoadUser`, `SaveUser`, `DeleteUser`, `ToggleUserDisabled`, `RevokeTokens`, `LoadStorageFile`, `CopyStorageUrl`.
 - Base panel class handles CSP, nonce generation, single-instance registry, and disposal.
 - UI components use `@vscode-elements/elements` web components (loaded from `node_modules` via `localResourceRoots`).
 

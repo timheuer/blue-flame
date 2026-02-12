@@ -43,6 +43,7 @@ function initUserEditor(uid, isNew) {
     document.getElementById("deleteBtn")?.addEventListener("click", deleteUser);
     document.getElementById("revokeBtn")?.addEventListener("click", revokeTokens);
     document.getElementById("saveClaimsBtn")?.addEventListener("click", saveCustomClaims);
+    document.getElementById("photoURL")?.addEventListener("input", updatePhotoPreview);
 
     if (!isNewUser) {
         // Show additional buttons for existing users
@@ -66,6 +67,7 @@ function populateForm(user) {
     setValue("photoURL", user.photoURL || "");
     setChecked("emailVerified", user.emailVerified);
     setChecked("disabled", user.disabled);
+    updatePhotoPreview();
 
     // Show metadata section
     const metadataSection = document.getElementById("metadata");
@@ -213,5 +215,31 @@ function showStatus(message, success) {
         el.textContent = message;
         el.className = success ? "status-success" : "status-error";
         setTimeout(() => { el.textContent = ""; }, 3000);
+    }
+}
+
+function updatePhotoPreview() {
+    const photoURL = getValue("photoURL");
+    const preview = document.getElementById("photoPreview");
+    if (!preview) { return; }
+    if (photoURL && isValidUrl(photoURL)) {
+        preview.src = photoURL;
+        preview.style.display = "block";
+    } else {
+        preview.style.display = "none";
+        preview.src = "";
+    }
+}
+
+/**
+ * @param {string} str
+ * @returns {boolean}
+ */
+function isValidUrl(str) {
+    try {
+        const url = new URL(str);
+        return url.protocol === "https:" || url.protocol === "http:";
+    } catch {
+        return false;
     }
 }

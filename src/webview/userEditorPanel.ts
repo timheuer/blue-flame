@@ -82,6 +82,7 @@ export class UserEditorPanel extends WebviewBase {
         <div class="form-group">
             <label for="photoURL">Photo URL</label>
             <vscode-textfield id="photoURL" type="url" placeholder="https://example.com/photo.jpg"></vscode-textfield>
+            <img id="photoPreview" style="display: none; width: 100px; height: 100px; object-fit: cover; align-self: flex-start; margin-top: 8px; border-radius: 4px;" alt="User photo">
         </div>
         <div class="form-row">
             <vscode-checkbox id="emailVerified">Email Verified</vscode-checkbox>

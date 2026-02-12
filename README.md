@@ -1,6 +1,6 @@
 # Blue Flame 🔥
 
-A VS Code extension for browsing and managing Google Cloud Firestore databases and Firebase Authentication users. Navigate collections and documents in a tree view, browse collections in tabular webview panels, edit document JSON, and manage authentication users — all without leaving your editor.
+A VS Code extension for browsing and managing Google Cloud Firestore databases, Firebase Authentication users, and Firebase Storage files. Navigate collections, documents, users, and storage files in a tree view, browse collections in tabular webview panels, edit document JSON, preview storage files, and manage authentication users — all without leaving your editor.
 
 <img alt="image" src="https://github.com/user-attachments/assets/6263a745-099b-4d7b-8bcb-bd006baa5594" />
 
@@ -24,6 +24,15 @@ A VS Code extension for browsing and managing Google Cloud Firestore databases a
 - **User details editor** — Edit user properties (email, display name, phone, password) in a webview panel
 - **Paginated user list** — Efficiently browse large user bases with "Load more" pagination
 
+### Firebase Storage
+
+- **File browsing** — Navigate storage bucket folders and files in the tree view
+- **File preview** — Preview images, text, JSON, and code files in a webview panel
+- **File operations** — Delete files and folders from the tree view
+- **Copy URLs** — Copy gs:// paths or public URLs to clipboard
+- **View metadata** — Inspect file metadata (size, content type, timestamps)
+- **Paginated listing** — Efficiently browse large buckets with "Load more" pagination
+
 ### Authentication Methods
 
 - **Google OAuth** — Sign in with your Google account directly in VS Code
@@ -35,7 +44,7 @@ A VS Code extension for browsing and managing Google Cloud Firestore databases a
 ### Prerequisites
 
 - [VS Code](https://code.visualstudio.com/) 1.109.0 or later
-- A Google Cloud project with Firestore and/or Firebase Authentication enabled
+- A Google Cloud project with Firestore, Firebase Authentication, and/or Firebase Storage enabled
 - One of the following authentication methods:
   - **Google OAuth** — Sign in via VS Code's authentication system
   - **Application Default Credentials (ADC)** — Run `gcloud auth application-default login` ([Google Cloud CLI](https://cloud.google.com/sdk/docs/install))
@@ -75,6 +84,15 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 - **Disable/Enable** — Right-click a user → **Disable User** or **Enable User**
 - **Delete User** — Right-click a user → **Delete User** (with confirmation)
 
+### Browsing Storage Files
+
+- **Expand** a connection → Storage to browse the default bucket
+- **Navigate** folders to view files and subfolders
+- **Click** a file to preview it in a webview panel
+- **Right-click** a file → **Copy gs:// URL** or **Copy Public URL**
+- **Right-click** a file → **View Metadata** to inspect file details
+- **Right-click** a file or folder → **Delete** (with confirmation)
+
 ## Commands
 
 ### Connection Commands
@@ -110,6 +128,19 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 | `Blue Flame: Enable User` | Enable a disabled user account |
 | `Blue Flame: Search Users` | Search users by email, UID, or phone |
 | `Blue Flame: Refresh Users` | Refresh the user list |
+
+### Storage Commands
+
+| Command | Description |
+|---------|-------------|
+| `Blue Flame: Preview File` | Preview a storage file in webview |
+| `Blue Flame: Copy gs:// URL` | Copy the file's gs:// path |
+| `Blue Flame: Copy Public URL` | Copy the file's public HTTP URL |
+| `Blue Flame: View Metadata` | View file metadata as JSON |
+| `Blue Flame: Delete File` | Delete a storage file |
+| `Blue Flame: Delete Folder` | Delete a folder and all contents |
+| `Blue Flame: Refresh Storage` | Refresh the storage tree |
+| `Blue Flame: Refresh Folder` | Refresh a folder's contents |
 
 ## Settings
 

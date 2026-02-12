@@ -3,12 +3,17 @@ import { ConnectionStorage } from "../storage/connections";
 import { getApp, getFirestoreClient, isOAuthConnection } from "../firebase/adminAppFactory";
 import { FirestoreService } from "../firebase/firestoreService";
 import { AuthService } from "../firebase/authService";
+import { StorageService } from "../firebase/storageService";
 import { Connection } from "../storage/types";
 import {
     BaseNode,
     ConnectionNode,
     FirestoreGroupNode,
     AuthGroupNode,
+    StorageGroupNode,
+    StorageFolderNode,
+    StorageFileNode,
+    LoadMoreStorageNode,
     CollectionNode,
     DocumentNode,
     UserNode,
@@ -56,6 +61,14 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
 
             if (element instanceof AuthGroupNode) {
                 return this.getUsers(element.connection);
+            }
+
+            if (element instanceof StorageGroupNode) {
+                return this.getStorageItems(element.connection, "", element.bucketName);
+            }
+
+            if (element instanceof StorageFolderNode) {
+                return this.getStorageItems(element.connection, element.folderPath, element.bucketName);
             }
 
             if (element instanceof CollectionNode) {
@@ -154,6 +167,49 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
 
         if (result.pageToken) {
             nodes.push(new LoadMoreUsersNode(connection, result.pageToken));
+        }
+
+        return nodes;
+    }
+
+    async getStorageItems(
+        connection: Connection,
+        prefix: string,
+        bucketName?: string,
+        pageToken?: string
+    ): Promise<BaseNode[]> {
+        const svc = isOAuthConnection(connection)
+            ? new StorageService(connection, bucketName)
+            : new StorageService(await getApp(connection), bucketName);
+
+        const bucket = svc.getBucketName();
+        const result = await svc.listAllFilesAndFolders(prefix, getPageSize(), pageToken);
+
+        if (result.items.length === 0 && !pageToken) {
+            return [new ErrorNode("No files found")];
+        }
+
+        const nodes: BaseNode[] = result.items.map((item) => {
+            if (item.isFolder) {
+                return new StorageFolderNode(
+                    connection,
+                    item.name,
+                    item.displayName,
+                    bucket
+                );
+            }
+            return new StorageFileNode(
+                connection,
+                item.name,
+                item.displayName,
+                bucket,
+                item.size,
+                item.contentType
+            );
+        });
+
+        if (result.nextPageToken) {
+            nodes.push(new LoadMoreStorageNode(connection, prefix, bucket, result.nextPageToken));
         }
 
         return nodes;
