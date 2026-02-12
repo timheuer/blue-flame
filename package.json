@@ -1,0 +1,384 @@
+{
+  "name": "blue-flame",
+  "displayName": "Blue Flame",
+  "description": "A Visual Studio Code extension for managing Firestore databases and Firebase Authentication users",
+  "version": "0.0.0-placeholder",
+  "author": {
+    "name": "Tim Heuer",
+    "url": "https://timheuer.com"
+  },
+  "publisher": "timheuer",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timheuer/blue-flame"
+  },
+  "bugs": {
+    "url": "https://github.com/timheuer/blue-flame/issues"
+  },
+  "qna": "https://github.com/timheuer/blue-flame/issues",
+  "engines": {
+    "vscode": "^1.109.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization"
+  ],
+  "keywords": [
+    "firebase",
+    "firestore",
+    "google cloud",
+    "gcp",
+    "nosql",
+    "database",
+    "authentication",
+    "firebase auth"
+  ],
+  "activationEvents": [
+    "onView:blueFlame.firestoreExplorer",
+    "onCommand:blue-flame.addConnection"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Blue Flame",
+      "properties": {
+        "blue-flame.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "off",
+            "error",
+            "warn",
+            "info",
+            "debug",
+            "trace"
+          ],
+          "description": "Log level for the Blue Flame extension"
+        },
+        "blue-flame.pageSize": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of documents to load per page in tree view and collection tables"
+        },
+        "blue-flame.userListPageSize": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Number of users to load per page in the Authentication tree"
+        },
+        "blue-flame.defaultMergeOnSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "When saving documents, merge with existing data instead of overwriting"
+        },
+        "blue-flame.documentOpenBehavior": {
+          "type": "string",
+          "default": "nativeEditor",
+          "enum": [
+            "nativeEditor",
+            "webviewPanel"
+          ],
+          "enumDescriptions": [
+            "Open documents in VS Code's native JSON editor",
+            "Open documents in a webview panel with integrated save/delete buttons"
+          ],
+          "description": "How to open documents when clicked in the tree view"
+        }
+      }
+    },
+    "authentication": [
+      {
+        "id": "blueFlame.googleOAuth",
+        "label": "Google (Blue Flame)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "blueFlame",
+          "title": "Blue Flame",
+          "icon": "$(flame)"
+        }
+      ]
+    },
+    "views": {
+      "blueFlame": [
+        {
+          "id": "blueFlame.firestoreExplorer",
+          "name": "Firestore Explorer"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "blue-flame.addConnection",
+        "title": "Add Connection",
+        "icon": "$(add)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.removeConnection",
+        "title": "Remove Connection",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshExplorer",
+        "title": "Refresh",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.openCollectionTable",
+        "title": "View Collection",
+        "icon": "$(table)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.viewDocument",
+        "title": "View Document",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.editDocument",
+        "title": "Edit Document",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.newDocument",
+        "title": "New Document",
+        "icon": "$(new-file)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.deleteDocument",
+        "title": "Delete Document",
+        "icon": "$(trash)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.openDocumentNative",
+        "title": "Open in Editor",
+        "icon": "$(go-to-file)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.editUser",
+        "title": "Edit User",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.newUser",
+        "title": "New User",
+        "icon": "$(person-add)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.deleteUser",
+        "title": "Delete User",
+        "icon": "$(trash)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.disableUser",
+        "title": "Disable User",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.enableUser",
+        "title": "Enable User",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.loadMoreUsers",
+        "title": "Load More Users",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.copyDocumentPath",
+        "title": "Copy Document Path",
+        "icon": "$(copy)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.searchUsers",
+        "title": "Search Users",
+        "icon": "$(search)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshFirestoreGroup",
+        "title": "Refresh Collections",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshCollection",
+        "title": "Refresh Collection",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      },
+      {
+        "command": "blue-flame.refreshAuthGroup",
+        "title": "Refresh Users",
+        "icon": "$(refresh)",
+        "category": "Blue Flame"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "blue-flame.addConnection",
+          "when": "view == blueFlame.firestoreExplorer",
+          "group": "navigation"
+        },
+        {
+          "command": "blue-flame.refreshExplorer",
+          "when": "view == blueFlame.firestoreExplorer",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "blue-flame.removeConnection",
+          "when": "viewItem == connection"
+        },
+        {
+          "command": "blue-flame.refreshFirestoreGroup",
+          "when": "viewItem == firestoreGroup",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.refreshFirestoreGroup",
+          "when": "viewItem == firestoreGroup"
+        },
+        {
+          "command": "blue-flame.openCollectionTable",
+          "when": "viewItem == collection",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.refreshCollection",
+          "when": "viewItem == collection",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.openCollectionTable",
+          "when": "viewItem == collection"
+        },
+        {
+          "command": "blue-flame.refreshCollection",
+          "when": "viewItem == collection"
+        },
+        {
+          "command": "blue-flame.newDocument",
+          "when": "viewItem == collection"
+        },
+        {
+          "command": "blue-flame.viewDocument",
+          "when": "viewItem == document"
+        },
+        {
+          "command": "blue-flame.editDocument",
+          "when": "viewItem == document"
+        },
+        {
+          "command": "blue-flame.openDocumentNative",
+          "when": "viewItem == document"
+        },
+        {
+          "command": "blue-flame.deleteDocument",
+          "when": "viewItem == document"
+        },
+        {
+          "command": "blue-flame.copyDocumentPath",
+          "when": "viewItem == document"
+        },
+        {
+          "command": "blue-flame.newUser",
+          "when": "viewItem == authGroup",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.refreshAuthGroup",
+          "when": "viewItem == authGroup",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.newUser",
+          "when": "viewItem == authGroup"
+        },
+        {
+          "command": "blue-flame.refreshAuthGroup",
+          "when": "viewItem == authGroup"
+        },
+        {
+          "command": "blue-flame.searchUsers",
+          "when": "viewItem == authGroup",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.searchUsers",
+          "when": "viewItem == authGroup"
+        },
+        {
+          "command": "blue-flame.editUser",
+          "when": "viewItem == user || viewItem == userDisabled"
+        },
+        {
+          "command": "blue-flame.disableUser",
+          "when": "viewItem == user"
+        },
+        {
+          "command": "blue-flame.enableUser",
+          "when": "viewItem == userDisabled"
+        },
+        {
+          "command": "blue-flame.deleteUser",
+          "when": "viewItem == user || viewItem == userDisabled"
+        },
+        {
+          "command": "blue-flame.loadMoreUsers",
+          "when": "viewItem == loadMoreUsers"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "deploy": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.109.0",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "dotenv": "^17.2.4",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.25.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@timheuer/vscode-ext-logger": "^0.1.35",
+    "@vscode-elements/elements": "^2.5.0",
+    "firebase-admin": "^13.6.1"
+  }
+}

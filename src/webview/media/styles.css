@@ -1,0 +1,125 @@
+:root {
+    --bg: var(--vscode-editor-background);
+    --fg: var(--vscode-editor-foreground);
+    --border: var(--vscode-panel-border);
+}
+
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    padding: 16px;
+    margin: 0;
+}
+
+h2 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.pagination {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+vscode-table-row.clickable {
+    cursor: pointer;
+}
+
+vscode-textarea#jsonEditor {
+    width: 100%;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.empty {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.status-success {
+    color: var(--vscode-testing-iconPassed, #73c991);
+    margin-top: 8px;
+}
+
+.status-error {
+    color: var(--vscode-errorForeground, #f44);
+    margin-top: 8px;
+}
+
+/* User Editor Form Styles */
+.user-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label {
+    font-size: 0.9em;
+    opacity: 0.85;
+}
+
+.form-group vscode-textfield {
+    width: 100%;
+}
+
+.form-row {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+
+.metadata-section,
+.providers-section,
+.claims-section {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.metadata-section h3,
+.providers-section h3,
+.claims-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.metadata-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    font-size: 0.9em;
+}
+
+.provider-item {
+    padding: 4px 0;
+    font-size: 0.9em;
+}
+
+.claims-section vscode-textarea {
+    width: 100%;
+}
