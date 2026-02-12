@@ -99,6 +99,7 @@ export class FirestoreFileSystemProvider implements vscode.FileSystemProvider {
         const svc = new FirestoreService(firestore);
         await svc.setDocument(docPath, data, { merge: false });
         logger.info(`Document saved: ${docPath}`);
+        vscode.window.showInformationMessage(`Document saved: ${docPath}`);
     }
 
     delete(): void {

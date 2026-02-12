@@ -126,6 +126,12 @@
         "category": "Blue Flame"
       },
       {
+        "command": "blue-flame.openFirebaseConsole",
+        "title": "Open Firebase Console",
+        "icon": "$(link-external)",
+        "category": "Blue Flame"
+      },
+      {
         "command": "blue-flame.refreshExplorer",
         "title": "Refresh",
         "icon": "$(refresh)",
@@ -244,6 +250,15 @@
       "view/item/context": [
         {
           "command": "blue-flame.removeConnection",
+          "when": "viewItem == connection"
+        },
+        {
+          "command": "blue-flame.openFirebaseConsole",
+          "when": "viewItem == connection",
+          "group": "inline"
+        },
+        {
+          "command": "blue-flame.openFirebaseConsole",
           "when": "viewItem == connection"
         },
         {

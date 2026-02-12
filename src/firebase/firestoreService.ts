@@ -1,6 +1,51 @@
-import { FieldPath } from "@google-cloud/firestore";
+import { FieldPath, Timestamp, GeoPoint } from "@google-cloud/firestore";
 import type { Firestore, DocumentSnapshot, Query } from "@google-cloud/firestore";
 import { logger } from "../extension";
+
+/**
+ * Recursively converts plain objects back to Firestore native types.
+ * Handles Timestamp and GeoPoint which get serialized to plain objects in JSON.
+ */
+function reconstructFirestoreTypes(data: unknown): unknown {
+    if (data === null || data === undefined) {
+        return data;
+    }
+
+    if (Array.isArray(data)) {
+        return data.map(reconstructFirestoreTypes);
+    }
+
+    if (typeof data === "object") {
+        const obj = data as Record<string, unknown>;
+
+        // Check for Timestamp pattern: { _seconds: number, _nanoseconds: number }
+        if (
+            typeof obj._seconds === "number" &&
+            typeof obj._nanoseconds === "number" &&
+            Object.keys(obj).length === 2
+        ) {
+            return new Timestamp(obj._seconds, obj._nanoseconds);
+        }
+
+        // Check for GeoPoint pattern: { _latitude: number, _longitude: number }
+        if (
+            typeof obj._latitude === "number" &&
+            typeof obj._longitude === "number" &&
+            Object.keys(obj).length === 2
+        ) {
+            return new GeoPoint(obj._latitude, obj._longitude);
+        }
+
+        // Recursively process nested objects
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(obj)) {
+            result[key] = reconstructFirestoreTypes(value);
+        }
+        return result;
+    }
+
+    return data;
+}
 
 export interface CollectionRefInfo {
     id: string;
@@ -72,7 +117,9 @@ export class FirestoreService {
         options: { merge: boolean }
     ): Promise<void> {
         logger.debug(`Setting document: ${docPath} (merge: ${options.merge})`);
-        await this.db.doc(docPath).set(data, { merge: options.merge });
+        const reconstructedData = reconstructFirestoreTypes(data) as Record<string, unknown>;
+        logger.debug(`Document data: ${JSON.stringify(data)}`);
+        await this.db.doc(docPath).set(reconstructedData, { merge: options.merge });
         logger.info(`Document saved: ${docPath}`);
     }
 
@@ -81,7 +128,8 @@ export class FirestoreService {
         data: Record<string, unknown>
     ): Promise<string> {
         logger.debug(`Adding new document to collection: ${collectionPath}`);
-        const ref = await this.db.collection(collectionPath).add(data);
+        const reconstructedData = reconstructFirestoreTypes(data) as Record<string, unknown>;
+        const ref = await this.db.collection(collectionPath).add(reconstructedData);
         logger.info(`Document created: ${ref.path}`);
         return ref.id;
     }

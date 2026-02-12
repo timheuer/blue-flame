@@ -125,6 +125,12 @@ export function registerConnectionCommands(
             treeProvider.refresh();
             logger.info(`Connection removed: ${connectionName}`);
             vscode.window.showInformationMessage(`Connection "${connectionName}" removed`);
+        }),
+
+        vscode.commands.registerCommand("blue-flame.openFirebaseConsole", (node: ConnectionNode) => {
+            if (!node) { return; }
+            const url = `https://console.firebase.google.com/project/${node.connection.projectId}`;
+            vscode.env.openExternal(vscode.Uri.parse(url));
         })
     );
 }
