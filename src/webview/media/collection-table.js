@@ -8,6 +8,14 @@ let pageStack = [];
 let collectionPath = "";
 /** @type {number} */
 let pageSize = 25;
+/** @type {{ id: string; path: string; fields: Record<string, unknown> }[]} */
+let currentDocs = [];
+/** @type {string | null} */
+let sortField = null;
+/** @type {'asc' | 'desc'} */
+let sortDirection = 'asc';
+/** @type {string[]} */
+let currentKeys = [];
 
 /**
  * @param {string} path
@@ -20,7 +28,14 @@ function initCollectionTable(path, size) {
     window.addEventListener("message", (event) => {
         const msg = event.data;
         if (msg.type === "pageLoaded") {
-            renderTable(msg.docs, msg.hasMore);
+            currentDocs = msg.docs;
+            
+            // Calculate keys from the original stable order
+            const allKeys = new Set();
+            currentDocs.forEach((doc) => Object.keys(doc.fields).forEach((k) => allKeys.add(k)));
+            currentKeys = Array.from(allKeys).slice(0, 8);
+
+            renderTable(currentDocs, msg.hasMore);
         }
     });
 
@@ -69,14 +84,37 @@ function renderTable(docs, hasMore) {
         return;
     }
 
-    const allKeys = new Set();
-    docs.forEach((doc) => Object.keys(doc.fields).forEach((k) => allKeys.add(k)));
-    const keys = Array.from(allKeys).slice(0, 8);
+    // Sort docs if needed
+    if (sortField) {
+        docs.sort((a, b) => {
+            const valA = sortField === 'ID' ? a.id : (a.fields[sortField]);
+            const valB = sortField === 'ID' ? b.id : (b.fields[sortField]);
+            
+            // Handle null/undefined
+            if (valA === valB) return 0;
+            if (valA === null || valA === undefined) return 1;
+            if (valB === null || valB === undefined) return -1;
 
-    let html = `<vscode-table zebra-bordered-rows>
+            const strA = String(valA).toLowerCase();
+            const strB = String(valB).toLowerCase();
+            
+            if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
+            if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    // Use the stable keys calculated at page load
+    const keys = currentKeys;
+
+    let html = `<vscode-table zebra-bordered-rows resizable>
         <vscode-table-header slot="header">
-            <vscode-table-header-cell>ID</vscode-table-header-cell>`;
-    keys.forEach((k) => { html += `<vscode-table-header-cell>${escapeHtml(String(k))}</vscode-table-header-cell>`; });
+            <vscode-table-header-cell class="sortable-header" data-field="ID">ID${getSortIndicator('ID')}</vscode-table-header-cell>`;
+    keys.forEach((k) => { 
+        html += `<vscode-table-header-cell class="sortable-header" data-field="${escapeHtml(String(k))}">
+            ${escapeHtml(String(k))}${getSortIndicator(String(k))}
+        </vscode-table-header-cell>`; 
+    });
     html += `</vscode-table-header>
         <vscode-table-body slot="body">`;
 
@@ -93,6 +131,22 @@ function renderTable(docs, hasMore) {
     html += `</vscode-table-body></vscode-table>`;
     container.innerHTML = html;
 
+    // Add sort listeners
+    container.querySelectorAll(".sortable-header").forEach(header => {
+        header.addEventListener("click", () => {
+            const field = header.getAttribute("data-field");
+            if (!field) return;
+
+            if (field === sortField) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortField = field;
+                sortDirection = 'asc';
+            }
+            renderTable(currentDocs, hasMore);
+        });
+    });
+
     document.querySelectorAll("vscode-table-row.clickable").forEach((row) => {
         row.addEventListener("click", () => {
             const docPath = row.getAttribute("data-path");
@@ -106,6 +160,15 @@ function renderTable(docs, hasMore) {
     const nextBtn = document.getElementById("nextBtn");
     if (prevBtn) { prevBtn.disabled = pageStack.length === 0; }
     if (nextBtn) { nextBtn.disabled = !hasMore; }
+}
+
+/**
+ * @param {string} field
+ * @returns {string}
+ */
+function getSortIndicator(field) {
+    if (sortField !== field) return '';
+    return sortDirection === 'asc' ? ' ▲' : ' ▼';
 }
 
 /**

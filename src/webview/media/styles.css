@@ -38,6 +38,11 @@ vscode-table-row.clickable {
     cursor: pointer;
 }
 
+vscode-table-header-cell {
+    cursor: pointer;
+    user-select: none;
+}
+
 vscode-textarea#jsonEditor {
     width: 100%;
 }
