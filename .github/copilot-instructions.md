@@ -83,8 +83,8 @@ src/
 - Base panel class handles CSP, nonce generation, single-instance registry, and disposal.
 - UI components use `@vscode-elements/elements` web components (loaded from `node_modules` via `localResourceRoots`).
 
-### esbuild Externals
-`firebase-admin` and its transitive native dependencies (`@google-cloud/firestore`, `google-auth-library`, `gcp-metadata`) are externalized — they must be available in `node_modules` at runtime.
+### esbuild Configuration
+All dependencies including `firebase-admin`, `@google-cloud/firestore`, and `google-auth-library` are bundled into a single `dist/extension.js` file. Only `vscode` is externalized.
 
 ### Extension Settings
 User-configurable settings are retrieved via `vscode.workspace.getConfiguration("blue-flame")`:

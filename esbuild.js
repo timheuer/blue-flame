@@ -58,10 +58,6 @@ async function main() {
 		},
 		external: [
 			'vscode',
-			'firebase-admin', 'firebase-admin/*',
-			'@google-cloud/firestore', '@google-cloud/firestore/*',
-			'google-auth-library', 'google-auth-library/*',
-			'gcp-metadata', 'gcp-metadata/*',
 		],
 		logLevel: 'silent',
 		plugins: [
