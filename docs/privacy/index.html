@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy | Blue Flame</title>
+    <meta name="description" content="Privacy policy for the Blue Flame VS Code extension." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+    <header class="app-bar">
+        <div class="app-bar-inner">
+            <a class="brand" href="../" aria-label="Blue Flame home">
+                <img class="brand-icon" src="../icon.png" alt="Blue Flame icon" />
+                <span class="brand-text">
+                    <span class="brand-title">Blue Flame</span>
+                    <span class="brand-subtitle">VS Code Extension</span>
+                </span>
+            </a>
+            <nav class="nav" aria-label="Main navigation">
+                <a href="../">Home</a>
+                <a href="./">Privacy</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <article class="card">
+            <h1>Privacy Policy</h1>
+            <p>
+                <strong>Blue Flame</strong> is a VS Code extension that allows you to browse and manage Google Cloud
+                Firestore databases. This document describes how the extension handles your data.
+            </p>
+
+            <h2>Data Collection</h2>
+            <p>
+                <strong>Blue Flame does not collect, transmit, or store any personal data on external servers controlled
+                    by the extension author.</strong> The extension operates entirely within your local VS Code
+                environment and
+                communicates directly with your own Firebase or Google Cloud projects.
+            </p>
+
+            <h2>Data Storage</h2>
+            <p>
+                The extension stores the following information locally on your machine using VS Code built-in
+                <code>globalState</code> storage:
+            </p>
+            <ul>
+                <li>
+                    <strong>Connection metadata</strong>: connection names, Firebase project IDs, database IDs, and
+                    authentication mode (ADC or service account)
+                </li>
+                <li>
+                    <strong>Service account file paths</strong>: if you use service account authentication, the file
+                    path to
+                    your JSON key file is stored (the file contents are not copied or stored by the extension)
+                </li>
+            </ul>
+            <p>This data is stored in VS Code extension storage directory and is not transmitted externally.</p>
+
+            <h2>External Communications</h2>
+            <p>The extension communicates only with:</p>
+            <ul>
+                <li>
+                    <strong>Google Cloud and Firebase APIs</strong>: to read and write Firestore data, manage Firebase
+                    Authentication users, and perform other Firebase operations using your own credentials
+                </li>
+                <li>
+                    <strong>VS Code Marketplace</strong>: standard VS Code extension update checks (handled by VS Code,
+                    not
+                    the extension)
+                </li>
+            </ul>
+            <p>
+                All communications with Firebase and Google Cloud use your own credentials (Application Default
+                Credentials
+                or your service account) and are subject to Google
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Privacy
+                    Policy</a>
+                and
+                <a href="https://cloud.google.com/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
+            </p>
+
+            <h2>Credentials</h2>
+            <p>The extension supports two authentication methods:</p>
+            <ol>
+                <li>
+                    <strong>Application Default Credentials (ADC)</strong>: uses credentials configured via
+                    <code>gcloud auth application-default login</code>. These credentials are managed by the Google
+                    Cloud SDK
+                    on your machine.
+                </li>
+                <li>
+                    <strong>Service Account JSON</strong>: uses a service account key file you provide. The extension
+                    reads
+                    this file at runtime but does not copy, cache, or transmit the file contents except to Google
+                    authentication services.
+                </li>
+            </ol>
+            <p><strong>You are responsible for protecting your credentials.</strong> Do not share service account files.
+            </p>
+
+            <h2>Telemetry</h2>
+            <p>
+                Blue Flame does not implement any custom telemetry or analytics. The extension does not track usage,
+                collect
+                error reports, or phone home.
+            </p>
+            <p>
+                VS Code itself may collect telemetry based on your settings. See the
+                <a href="https://code.visualstudio.com/docs/getstarted/telemetry" target="_blank"
+                    rel="noopener noreferrer">
+                    VS Code Privacy Statement
+                </a>
+                for details.
+            </p>
+
+            <h2>Data You Access</h2>
+            <p>
+                When using the extension, you interact with data stored in your own Firebase projects. The extension
+                provides a user interface for reading, creating, updating, and deleting:
+            </p>
+            <ul>
+                <li>Firestore documents and collections</li>
+                <li>Firebase Authentication users</li>
+            </ul>
+            <p>
+                This data is stored in and retrieved from your Firebase project, subject to your Firebase project
+                security
+                rules and Google Cloud data handling policies.
+            </p>
+
+            <h2>Your Control</h2>
+            <ul>
+                <li><strong>Remove connections</strong>: delete saved connections at any time via the extension context
+                    menu</li>
+                <li>
+                    <strong>Revoke credentials</strong>: revoke ADC with
+                    <code>gcloud auth application-default revoke</code>
+                    or delete or disable service account keys in the Google Cloud Console
+                </li>
+                <li><strong>Uninstall</strong>: uninstalling the extension removes locally stored connection metadata
+                </li>
+            </ul>
+
+            <h2>Third-Party Services</h2>
+            <p>The extension depends on:</p>
+            <ul>
+                <li><strong>firebase-admin</strong> (Google): official Firebase Admin SDK for Node.js</li>
+                <li><strong>@vscode-elements/elements</strong>: UI components for webviews (no network activity)</li>
+            </ul>
+
+            <h2>Changes to This Policy</h2>
+            <p>
+                Any changes to this privacy policy are documented in the repository commit history and noted in the
+                changelog.
+            </p>
+
+            <h2>Contact</h2>
+            <p>
+                If you have questions about this privacy policy, open an issue at
+                <a href="https://github.com/timheuer/blue-flame/issues" target="_blank" rel="noopener noreferrer">
+                    github.com/timheuer/blue-flame/issues
+                </a>
+                .
+            </p>
+
+            <p class="muted">Last updated: February 2026</p>
+        </article>
+    </main>
+
+    <footer>
+        <p><a href="../">Back to home</a></p>
+    </footer>
+</body>
+
+</html>
