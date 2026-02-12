@@ -61,7 +61,7 @@ export class UserEditorPanel extends WebviewBase {
     <div class="user-form">
         <div class="form-group">
             <label for="uid">UID</label>
-            <vscode-textfield id="uid" readonly value="${this.escapeHtml(this.uid)}"></vscode-textfield>
+            <vscode-textfield id="uid" readonly value="${this.isNew ? "Auto-generated on create" : this.escapeHtml(this.uid)}"></vscode-textfield>
         </div>
         <div class="form-group">
             <label for="email">Email</label>

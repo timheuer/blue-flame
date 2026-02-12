@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as crypto from "crypto";
 import { UserEditorPanel } from "../webview/userEditorPanel";
 import { UserNode, AuthGroupNode, LoadMoreUsersNode } from "../views/nodes";
 import { FirestoreExplorerProvider } from "../views/firestoreExplorer";
@@ -38,12 +37,11 @@ export function registerAuthCommands(
         vscode.commands.registerCommand(
             "blue-flame.newUser",
             async (node: AuthGroupNode) => {
-                const uid = crypto.randomUUID();
-                logger.debug(`Creating new user with temporary UID: ${uid}`);
+                logger.debug("Creating new user");
                 const panel = new UserEditorPanel(
                     context.extensionUri,
                     node.connection,
-                    uid,
+                    "",
                     true
                 );
                 await panel.loadUser();

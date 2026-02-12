@@ -75,8 +75,29 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
                 return this.getDocuments(element.connection, element.collectionPath);
             }
 
+            if (element instanceof LoadMoreNode) {
+                return this.getDocuments(
+                    element.connection,
+                    element.collectionPath,
+                    element.startAfterDocId
+                );
+            }
+
             if (element instanceof DocumentNode) {
                 return this.getSubcollections(element);
+            }
+
+            if (element instanceof LoadMoreUsersNode) {
+                return this.getUsers(element.connection, element.pageToken);
+            }
+
+            if (element instanceof LoadMoreStorageNode) {
+                return this.getStorageItems(
+                    element.connection,
+                    element.prefix,
+                    element.bucketName,
+                    element.pageToken
+                );
             }
 
             return [];

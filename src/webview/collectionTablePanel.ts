@@ -5,6 +5,7 @@ import { FirestoreService } from "../firebase/firestoreService";
 import { Connection } from "../storage/types";
 import { buildDocumentUri } from "../firebase/firestoreFileSystemProvider";
 import { getFirestoreClient } from "../firebase/adminAppFactory";
+import { DocumentJsonPanel } from "./documentJsonPanel";
 import { logger } from "../extension";
 
 function getPageSize(): number {
@@ -106,6 +107,15 @@ export class CollectionTablePanel extends WebviewBase {
             case "openDocument": {
                 if (typeof message.docPath !== "string") {
                     return;
+                }
+                if (!message.docPath) {
+                    const panel = new DocumentJsonPanel(
+                        this.extensionUri,
+                        this.connection,
+                        this.collectionPath
+                    );
+                    panel.show();
+                    break;
                 }
                 const uri = buildDocumentUri(this.connection.id, message.docPath);
                 const doc = await vscode.workspace.openTextDocument(uri);

@@ -121,16 +121,13 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
     }
 
     private async _performOAuthFlow(scopes: string[]): Promise<{ accessToken: string; refreshToken: string }> {
-        logger.debug(`Starting OAuth flow with client_id length: ${GOOGLE_CLIENT_ID.length}, secret length: ${GOOGLE_CLIENT_SECRET.length}`);
-        logger.debug(`OAuth client_id prefix: ${GOOGLE_CLIENT_ID.substring(0, 20)}...`);
-
         if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.length < 10) {
             logger.error("GOOGLE_CLIENT_ID is empty or invalid");
             throw new Error("OAuth Client ID is not configured");
         }
 
-        const { port, redirectUri, serverPromise } = await this._startCallbackServer();
         const state = crypto.randomUUID();
+        const { port, redirectUri, serverPromise } = await this._startCallbackServer(state);
         const codeVerifier = crypto.randomBytes(32).toString("base64url");
         const codeChallenge = crypto
             .createHash("sha256")
@@ -187,7 +184,7 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
         return { accessToken: tokens.access_token, refreshToken: tokens.refresh_token };
     }
 
-    private _startCallbackServer(): Promise<{ port: number; redirectUri: string; serverPromise: Promise<string> }> {
+    private _startCallbackServer(expectedState: string): Promise<{ port: number; redirectUri: string; serverPromise: Promise<string> }> {
         return new Promise((resolveSetup) => {
             const server = http.createServer();
             server.listen(0, "127.0.0.1", () => {
@@ -206,9 +203,15 @@ export class GoogleAuthProvider implements vscode.AuthenticationProvider, vscode
                         if (url.pathname === "/callback") {
                             const code = url.searchParams.get("code");
                             const error = url.searchParams.get("error");
+                            const returnedState = url.searchParams.get("state");
 
                             res.writeHead(200, { "Content-Type": "text/html" });
-                            if (code) {
+                            if (returnedState !== expectedState) {
+                                res.end("<html><body><h2>Authentication failed</h2><p>Invalid OAuth state. Please try again.</p></body></html>");
+                                clearTimeout(timeout);
+                                server.close();
+                                rejectCode(new Error("OAuth state validation failed"));
+                            } else if (code) {
                                 res.end("<html><body><h2>Authentication successful!</h2><p>You can close this window and return to VS Code.</p></body></html>");
                                 clearTimeout(timeout);
                                 server.close();

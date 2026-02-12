@@ -39,9 +39,6 @@ async function getOAuthClient(connection: Connection): Promise<OAuth2Client> {
         throw new Error("No Google OAuth refresh token found. Please sign in again.");
     }
 
-    logger.debug(`Creating OAuth2Client with client_id length: ${GOOGLE_CLIENT_ID.length}, client_secret length: ${GOOGLE_CLIENT_SECRET.length}`);
-    logger.debug(`OAuth client_id prefix: ${GOOGLE_CLIENT_ID.substring(0, 20)}...`);
-
     if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.length < 10) {
         logger.error("GOOGLE_CLIENT_ID is missing or invalid");
         throw new Error("OAuth Client ID is not configured. Check build configuration.");
