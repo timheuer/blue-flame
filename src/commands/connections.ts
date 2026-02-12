@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as crypto from "crypto";
 import { ConnectionStorage } from "../storage/connections";
 import { Connection } from "../storage/types";
-import { disposeApp } from "../firebase/adminAppFactory";
+import { disposeConnection } from "../firebase/adminAppFactory";
 import { FirestoreExplorerProvider } from "../views/firestoreExplorer";
 import { GoogleAuthProvider } from "../firebase/googleAuthProvider";
 import { logger } from "../extension";
@@ -108,7 +108,7 @@ export function registerConnectionCommands(
             );
             if (confirm !== "Remove") { return; }
 
-            await disposeApp(pick.id);
+            await disposeConnection(pick.id);
             await connectionStorage.remove(pick.id);
             treeProvider.refresh();
             logger.info(`Connection removed: ${pick.label}`);

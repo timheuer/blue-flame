@@ -4,7 +4,7 @@ import { WebviewToExtensionMessage } from "./protocol";
 import { FirestoreService } from "../firebase/firestoreService";
 import { Connection } from "../storage/types";
 import { buildDocumentUri } from "../firebase/firestoreFileSystemProvider";
-import type { App } from "firebase-admin/app";
+import { getFirestoreClient } from "../firebase/adminAppFactory";
 import { logger } from "../extension";
 
 function getPageSize(): number {
@@ -12,13 +12,12 @@ function getPageSize(): number {
 }
 
 export class CollectionTablePanel extends WebviewBase {
-    private readonly service: FirestoreService;
+    private service: FirestoreService | undefined;
 
     constructor(
         extensionUri: vscode.Uri,
         private readonly connection: Connection,
-        private readonly collectionPath: string,
-        app: App
+        private readonly collectionPath: string
     ) {
         super(
             extensionUri,
@@ -26,7 +25,14 @@ export class CollectionTablePanel extends WebviewBase {
             `Collection: ${collectionPath}`,
             `collection:${connection.id}:${collectionPath}`
         );
-        this.service = new FirestoreService(app, connection.databaseId);
+    }
+
+    private async getService(): Promise<FirestoreService> {
+        if (!this.service) {
+            const firestore = await getFirestoreClient(this.connection);
+            this.service = new FirestoreService(firestore);
+        }
+        return this.service;
     }
 
     protected getHtmlContent(webview: vscode.Webview): string {
@@ -71,7 +77,8 @@ export class CollectionTablePanel extends WebviewBase {
                     return;
                 }
                 try {
-                    const result = await this.service.listDocuments(
+                    const service = await this.getService();
+                    const result = await service.listDocuments(
                         message.collectionPath,
                         {
                             pageSize: message.pageSize,
@@ -112,7 +119,8 @@ export class CollectionTablePanel extends WebviewBase {
         logger.debug(`Loading initial page for collection: ${this.collectionPath}`);
         this.show();
         try {
-            const result = await this.service.listDocuments(this.collectionPath, {
+            const service = await this.getService();
+            const result = await service.listDocuments(this.collectionPath, {
                 pageSize: getPageSize(),
             });
             const docs = result.docs.map((doc) => ({

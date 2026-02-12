@@ -1,6 +1,5 @@
-import { getFirestore, FieldPath } from "firebase-admin/firestore";
-import type { Firestore, DocumentSnapshot, Query } from "firebase-admin/firestore";
-import type { App } from "firebase-admin/app";
+import { FieldPath } from "@google-cloud/firestore";
+import type { Firestore, DocumentSnapshot, Query } from "@google-cloud/firestore";
 import { logger } from "../extension";
 
 export interface CollectionRefInfo {
@@ -22,12 +21,8 @@ export interface ListDocumentsOptions {
 export class FirestoreService {
     private readonly db: Firestore;
 
-    constructor(app: App, databaseId: string) {
-        if (databaseId && databaseId !== "(default)") {
-            this.db = getFirestore(app, databaseId);
-        } else {
-            this.db = getFirestore(app);
-        }
+    constructor(firestore: Firestore) {
+        this.db = firestore;
     }
 
     async listRootCollections(): Promise<CollectionRefInfo[]> {

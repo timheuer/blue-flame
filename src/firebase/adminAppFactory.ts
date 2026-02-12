@@ -1,12 +1,17 @@
 import * as admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 import * as fs from "fs";
 import * as path from "path";
+import { Firestore } from "@google-cloud/firestore";
+import { OAuth2Client, GoogleAuth } from "google-auth-library";
 import { Connection } from "../storage/types";
 import { GoogleAuthProvider } from "./googleAuthProvider";
 import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from "./googleOAuthConstants";
 import { logger } from "../extension";
 
 const appCache = new Map<string, admin.app.App>();
+const firestoreCache = new Map<string, Firestore>();
+const oauthClientCache = new Map<string, OAuth2Client>();
 
 let _authProvider: GoogleAuthProvider | undefined;
 
@@ -14,7 +19,91 @@ export function setAuthProvider(provider: GoogleAuthProvider): void {
     _authProvider = provider;
 }
 
+export function isOAuthConnection(connection: Connection): boolean {
+    return connection.authMode === "googleOAuth";
+}
+
+async function getOAuthClient(connection: Connection): Promise<OAuth2Client> {
+    const cached = oauthClientCache.get(connection.id);
+    if (cached) {
+        return cached;
+    }
+
+    if (!_authProvider) {
+        throw new Error("Google OAuth provider not initialized");
+    }
+
+    const refreshToken = await _authProvider.getRefreshToken();
+    if (!refreshToken) {
+        throw new Error("No Google OAuth refresh token found. Please sign in again.");
+    }
+
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET);
+    client.setCredentials({ refresh_token: refreshToken });
+    oauthClientCache.set(connection.id, client);
+    return client;
+}
+
+export async function getAccessToken(connection: Connection): Promise<string> {
+    if (!isOAuthConnection(connection)) {
+        throw new Error("getAccessToken is only for OAuth connections");
+    }
+    const client = await getOAuthClient(connection);
+    const tokenResponse = await client.getAccessToken();
+    if (!tokenResponse.token) {
+        throw new Error("Failed to get access token");
+    }
+    return tokenResponse.token;
+}
+
+export async function getFirestoreClient(connection: Connection): Promise<Firestore> {
+    const cacheKey = `${connection.id}:${connection.databaseId}`;
+    const cached = firestoreCache.get(cacheKey);
+    if (cached) {
+        logger.debug(`Using cached Firestore client for connection: ${connection.name}`);
+        return cached;
+    }
+
+    logger.debug(`Creating Firestore client for connection: ${connection.name} (project: ${connection.projectId}, auth: ${connection.authMode})`);
+
+    let firestore: Firestore;
+
+    if (connection.authMode === "googleOAuth") {
+        const oauthClient = await getOAuthClient(connection);
+        const authClient = new GoogleAuth({
+            authClient: oauthClient,
+            projectId: connection.projectId,
+        });
+
+        const databaseId = connection.databaseId && connection.databaseId !== "(default)"
+            ? connection.databaseId
+            : "(default)";
+
+        firestore = new Firestore({
+            projectId: connection.projectId,
+            databaseId,
+            authClient: authClient as unknown as GoogleAuth,
+        });
+        logger.info(`Firestore client created with OAuth: ${connection.name}`);
+    } else {
+        const app = await getApp(connection);
+        if (connection.databaseId && connection.databaseId !== "(default)") {
+            firestore = getFirestore(app, connection.databaseId);
+        } else {
+            firestore = getFirestore(app);
+        }
+        logger.info(`Firestore client created via Admin SDK: ${connection.name}`);
+    }
+
+    firestoreCache.set(cacheKey, firestore);
+    return firestore;
+}
+
 export async function getApp(connection: Connection): Promise<admin.app.App> {
+    if (connection.authMode === "googleOAuth") {
+        throw new Error("Admin SDK App is not available for OAuth connections. Use getFirestoreClient() or getAccessToken() instead.");
+    }
+
     const cached = appCache.get(connection.id);
     if (cached) {
         logger.debug(`Using cached Firebase app for connection: ${connection.name}`);
@@ -34,19 +123,6 @@ export async function getApp(connection: Connection): Promise<admin.app.App> {
         const raw = fs.readFileSync(resolvedPath, "utf-8");
         const serviceAccount = JSON.parse(raw);
         credential = admin.credential.cert(serviceAccount);
-    } else if (connection.authMode === "googleOAuth" && _authProvider) {
-        logger.debug("Using Google OAuth credentials");
-        const refreshToken = await _authProvider.getRefreshToken();
-        if (!refreshToken) {
-            logger.error("No Google OAuth refresh token found");
-            throw new Error("No Google OAuth refresh token found. Please sign in again.");
-        }
-        credential = admin.credential.refreshToken({
-            type: "authorized_user",
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
-            refresh_token: refreshToken,
-        });
     } else {
         logger.debug("Using Application Default Credentials (ADC)");
         credential = admin.credential.applicationDefault();
@@ -64,7 +140,7 @@ export async function getApp(connection: Connection): Promise<admin.app.App> {
     return app;
 }
 
-export async function disposeApp(connectionId: string): Promise<void> {
+export async function disposeConnection(connectionId: string): Promise<void> {
     const app = appCache.get(connectionId);
     if (app) {
         logger.debug(`Disposing Firebase app: ${connectionId}`);
@@ -72,14 +148,35 @@ export async function disposeApp(connectionId: string): Promise<void> {
         appCache.delete(connectionId);
         logger.info(`Firebase app disposed: ${connectionId}`);
     }
+
+    for (const key of firestoreCache.keys()) {
+        if (key.startsWith(`${connectionId}:`)) {
+            const fs = firestoreCache.get(key);
+            if (fs) {
+                await fs.terminate();
+            }
+            firestoreCache.delete(key);
+            logger.debug(`Firestore client disposed: ${key}`);
+        }
+    }
+
+    oauthClientCache.delete(connectionId);
 }
 
 export async function disposeAll(): Promise<void> {
-    logger.debug(`Disposing all Firebase apps (count: ${appCache.size})`);
-    const promises = Array.from(appCache.entries()).map(async ([id, app]) => {
+    logger.debug(`Disposing all Firebase resources (apps: ${appCache.size}, firestore: ${firestoreCache.size})`);
+
+    const appPromises = Array.from(appCache.entries()).map(async ([id, app]) => {
         await app.delete();
         appCache.delete(id);
     });
-    await Promise.all(promises);
-    logger.info("All Firebase apps disposed");
+
+    const fsPromises = Array.from(firestoreCache.entries()).map(async ([key, fs]) => {
+        await fs.terminate();
+        firestoreCache.delete(key);
+    });
+
+    await Promise.all([...appPromises, ...fsPromises]);
+    oauthClientCache.clear();
+    logger.info("All Firebase resources disposed");
 }

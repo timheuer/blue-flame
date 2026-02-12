@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { FirestoreExplorerProvider } from "../views/firestoreExplorer";
 import { CollectionNode, DocumentNode, FirestoreGroupNode } from "../views/nodes";
-import { getApp } from "../firebase/adminAppFactory";
+import { getFirestoreClient } from "../firebase/adminAppFactory";
 import { FirestoreService } from "../firebase/firestoreService";
 import { DocumentJsonPanel } from "../webview/documentJsonPanel";
 import { logger } from "../extension";
@@ -44,14 +44,12 @@ export function registerFirestoreCommands(
                 });
                 if (docId === undefined) { return; }
 
-                const app = await getApp(node.connection);
                 const panel = new DocumentJsonPanel(
                     context.extensionUri,
                     node.connection,
                     docId
                         ? `${node.collectionPath}/${docId}`
-                        : node.collectionPath,
-                    app
+                        : node.collectionPath
                 );
 
                 if (docId) {
@@ -76,8 +74,8 @@ export function registerFirestoreCommands(
                 if (confirm !== "Delete") { return; }
 
                 try {
-                    const app = await getApp(node.connection);
-                    const svc = new FirestoreService(app, node.connection.databaseId);
+                    const firestore = await getFirestoreClient(node.connection);
+                    const svc = new FirestoreService(firestore);
                     await svc.deleteDocument(node.docPath);
                     logger.info(`Document deleted: ${node.docPath}`);
                     vscode.window.showInformationMessage(`Document "${node.docId}" deleted`);
@@ -110,12 +108,10 @@ export function registerFirestoreCommands(
                 }
                 logger.debug(`Viewing document: ${path}`);
 
-                const app = await getApp(connection);
                 const panel = new DocumentJsonPanel(
                     context.extensionUri,
                     connection,
-                    path,
-                    app
+                    path
                 );
                 await panel.loadDocument();
             }

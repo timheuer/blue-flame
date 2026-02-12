@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { ConnectionStorage } from "../storage/connections";
-import { getApp } from "./adminAppFactory";
+import { getFirestoreClient } from "./adminAppFactory";
 import { FirestoreService } from "./firestoreService";
 import { logger } from "../extension";
 
@@ -68,8 +68,8 @@ export class FirestoreFileSystemProvider implements vscode.FileSystemProvider {
             throw vscode.FileSystemError.FileNotFound(`Connection not found: ${connectionId}`);
         }
 
-        const app = await getApp(connection);
-        const svc = new FirestoreService(app, connection.databaseId);
+        const firestore = await getFirestoreClient(connection);
+        const svc = new FirestoreService(firestore);
         const result = await svc.getDocument(docPath);
 
         if (!result.exists) {
@@ -95,8 +95,8 @@ export class FirestoreFileSystemProvider implements vscode.FileSystemProvider {
             throw new Error("Invalid JSON");
         }
 
-        const app = await getApp(connection);
-        const svc = new FirestoreService(app, connection.databaseId);
+        const firestore = await getFirestoreClient(connection);
+        const svc = new FirestoreService(firestore);
         await svc.setDocument(docPath, data, { merge: false });
         logger.info(`Document saved: ${docPath}`);
     }

@@ -3,18 +3,17 @@ import { WebviewBase } from "./webviewBase";
 import { WebviewToExtensionMessage } from "./protocol";
 import { AuthService, UserInfo } from "../firebase/authService";
 import { Connection } from "../storage/types";
-import type { App } from "firebase-admin/app";
+import { getApp, isOAuthConnection } from "../firebase/adminAppFactory";
 import { logger } from "../extension";
 
 export class UserEditorPanel extends WebviewBase {
-    private readonly service: AuthService;
+    private service: AuthService | undefined;
 
     constructor(
         extensionUri: vscode.Uri,
         private readonly connection: Connection,
         private readonly uid: string,
-        private readonly isNew: boolean = false,
-        app: App
+        private readonly isNew: boolean = false
     ) {
         super(
             extensionUri,
@@ -22,7 +21,18 @@ export class UserEditorPanel extends WebviewBase {
             isNew ? "New User" : `User: ${uid}`,
             `user:${connection.id}:${uid}`
         );
-        this.service = new AuthService(app);
+    }
+
+    private async getService(): Promise<AuthService> {
+        if (!this.service) {
+            if (isOAuthConnection(this.connection)) {
+                this.service = new AuthService(this.connection);
+            } else {
+                const app = await getApp(this.connection);
+                this.service = new AuthService(app);
+            }
+        }
+        return this.service;
     }
 
     protected override getIconPath(): vscode.ThemeIcon {
@@ -118,7 +128,8 @@ export class UserEditorPanel extends WebviewBase {
                     return;
                 }
                 try {
-                    const user = await this.service.getUser(message.uid);
+                    const service = await this.getService();
+                    const user = await service.getUser(message.uid);
                     this.postMessage({
                         type: "userLoaded",
                         user,
@@ -136,6 +147,7 @@ export class UserEditorPanel extends WebviewBase {
                 }
                 logger.debug(`Saving user: ${message.uid} (isNew: ${this.isNew})`);
                 try {
+                    const service = await this.getService();
                     let user: UserInfo;
                     if (this.isNew) {
                         const createProps: {
@@ -154,9 +166,9 @@ export class UserEditorPanel extends WebviewBase {
                         if (message.properties.photoURL) { createProps.photoURL = message.properties.photoURL; }
                         if (message.properties.disabled !== undefined) { createProps.disabled = message.properties.disabled; }
                         if (message.properties.emailVerified !== undefined) { createProps.emailVerified = message.properties.emailVerified; }
-                        user = await this.service.createUser(createProps);
+                        user = await service.createUser(createProps);
                     } else {
-                        user = await this.service.updateUser(message.uid, message.properties);
+                        user = await service.updateUser(message.uid, message.properties);
                     }
                     this.postMessage({ type: "userSaveResult", success: true });
                     this.postMessage({ type: "userLoaded", user });
@@ -185,7 +197,8 @@ export class UserEditorPanel extends WebviewBase {
                 );
                 if (confirm === "Delete") {
                     try {
-                        await this.service.deleteUser(message.uid);
+                        const service = await this.getService();
+                        await service.deleteUser(message.uid);
                         logger.info(`User deleted via webview: ${message.uid}`);
                         vscode.window.showInformationMessage("User deleted");
                         vscode.commands.executeCommand("blue-flame.refreshExplorer");
@@ -204,7 +217,8 @@ export class UserEditorPanel extends WebviewBase {
                 }
                 logger.debug(`Toggling user disabled state: ${message.uid} -> ${message.disabled}`);
                 try {
-                    const user = await this.service.updateUser(message.uid, {
+                    const service = await this.getService();
+                    const user = await service.updateUser(message.uid, {
                         disabled: message.disabled,
                     });
                     this.postMessage({ type: "userLoaded", user });
@@ -232,7 +246,8 @@ export class UserEditorPanel extends WebviewBase {
                 );
                 if (confirm === "Revoke") {
                     try {
-                        await this.service.revokeRefreshTokens(message.uid);
+                        const service = await this.getService();
+                        await service.revokeRefreshTokens(message.uid);
                         logger.info(`Tokens revoked for user via webview: ${message.uid}`);
                         vscode.window.showInformationMessage("Tokens revoked successfully");
                     } catch (err: unknown) {
@@ -249,11 +264,12 @@ export class UserEditorPanel extends WebviewBase {
                 }
                 logger.debug(`Saving custom claims for user: ${message.uid}`);
                 try {
+                    const service = await this.getService();
                     const claims = message.claims as Record<string, unknown> | null;
-                    await this.service.setCustomClaims(message.uid, claims);
+                    await service.setCustomClaims(message.uid, claims);
                     logger.info(`Custom claims saved for user: ${message.uid}`);
                     vscode.window.showInformationMessage("Custom claims saved");
-                    const user = await this.service.getUser(message.uid);
+                    const user = await service.getUser(message.uid);
                     this.postMessage({ type: "userLoaded", user });
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : String(err);
@@ -270,7 +286,8 @@ export class UserEditorPanel extends WebviewBase {
         this.show();
         if (!this.isNew) {
             try {
-                const user = await this.service.getUser(this.uid);
+                const service = await this.getService();
+                const user = await service.getUser(this.uid);
                 this.postMessage({
                     type: "userLoaded",
                     user,

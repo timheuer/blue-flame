@@ -3,10 +3,18 @@ import * as crypto from "crypto";
 import { UserEditorPanel } from "../webview/userEditorPanel";
 import { UserNode, AuthGroupNode, LoadMoreUsersNode } from "../views/nodes";
 import { FirestoreExplorerProvider } from "../views/firestoreExplorer";
-import { getApp } from "../firebase/adminAppFactory";
+import { getApp, isOAuthConnection } from "../firebase/adminAppFactory";
 import { AuthService } from "../firebase/authService";
 import { Connection } from "../storage/types";
 import { logger } from "../extension";
+
+async function createAuthService(connection: Connection): Promise<AuthService> {
+    if (isOAuthConnection(connection)) {
+        return new AuthService(connection);
+    }
+    const app = await getApp(connection);
+    return new AuthService(app);
+}
 
 export function registerAuthCommands(
     context: vscode.ExtensionContext,
@@ -17,13 +25,11 @@ export function registerAuthCommands(
             "blue-flame.editUser",
             async (node: UserNode) => {
                 logger.debug(`Opening user editor for UID: ${node.uid}`);
-                const app = await getApp(node.connection);
                 const panel = new UserEditorPanel(
                     context.extensionUri,
                     node.connection,
                     node.uid,
-                    false,
-                    app
+                    false
                 );
                 await panel.loadUser();
             }
@@ -34,13 +40,11 @@ export function registerAuthCommands(
             async (node: AuthGroupNode) => {
                 const uid = crypto.randomUUID();
                 logger.debug(`Creating new user with temporary UID: ${uid}`);
-                const app = await getApp(node.connection);
                 const panel = new UserEditorPanel(
                     context.extensionUri,
                     node.connection,
                     uid,
-                    true,
-                    app
+                    true
                 );
                 await panel.loadUser();
             }
@@ -58,8 +62,7 @@ export function registerAuthCommands(
                 if (confirm !== "Delete") { return; }
 
                 try {
-                    const app = await getApp(node.connection);
-                    const svc = new AuthService(app);
+                    const svc = await createAuthService(node.connection);
                     await svc.deleteUser(node.uid);
                     logger.info(`User deleted: ${node.uid}`);
                     vscode.window.showInformationMessage("User deleted");
@@ -77,8 +80,7 @@ export function registerAuthCommands(
             async (node: UserNode) => {
                 logger.debug(`Disabling user: ${node.uid}`);
                 try {
-                    const app = await getApp(node.connection);
-                    const svc = new AuthService(app);
+                    const svc = await createAuthService(node.connection);
                     await svc.updateUser(node.uid, { disabled: true });
                     logger.info(`User disabled: ${node.uid}`);
                     vscode.window.showInformationMessage("User disabled");
@@ -96,8 +98,7 @@ export function registerAuthCommands(
             async (node: UserNode) => {
                 logger.debug(`Enabling user: ${node.uid}`);
                 try {
-                    const app = await getApp(node.connection);
-                    const svc = new AuthService(app);
+                    const svc = await createAuthService(node.connection);
                     await svc.updateUser(node.uid, { disabled: false });
                     logger.info(`User enabled: ${node.uid}`);
                     vscode.window.showInformationMessage("User enabled");
@@ -137,8 +138,7 @@ export function registerAuthCommands(
                 if (!query) { return; }
 
                 try {
-                    const app = await getApp(connection);
-                    const svc = new AuthService(app);
+                    const svc = await createAuthService(connection);
                     let user;
                     if (query.includes("@")) {
                         logger.debug(`Searching by email: ${query}`);
@@ -152,8 +152,7 @@ export function registerAuthCommands(
                         context.extensionUri,
                         connection,
                         user.uid,
-                        false,
-                        app
+                        false
                     );
                     await panel.loadUser();
                 } catch (err: unknown) {

@@ -53,8 +53,21 @@ src/
 
 ### Connection Model
 - Connections are stored in `globalState` (never secrets, only metadata and file paths).
-- Auth supports ADC (Application Default Credentials) or a service account JSON file path.
-- Firebase apps are cached in a `Map<string, admin.app.App>` keyed by connection ID.
+- Auth modes: `adc` (Application Default Credentials), `serviceAccountPath` (JSON file), or `googleOAuth` (user OAuth flow).
+- Firebase apps are cached in a `Map<string, admin.app.App>` keyed by connection ID (non-OAuth connections only).
+- For OAuth connections, Firestore clients are cached separately using `@google-cloud/firestore` directly with OAuth credentials.
+
+### Authentication Modes
+- **Service Account / ADC**: Uses `firebase-admin` SDK directly via `getApp()`. Full support for all Firebase Admin SDK features.
+- **Google OAuth**: Uses `google-auth-library` for OAuth2 flow, creates Firestore clients directly via `@google-cloud/firestore`, and uses Firebase Identity Toolkit REST API for Auth operations. Call `getFirestoreClient()` (not `getApp()`) for Firestore access.
+
+### Factory Functions (adminAppFactory.ts)
+- `getFirestoreClient(connection)`: Returns a `Firestore` client for any connection type. Preferred method.
+- `getApp(connection)`: Returns Admin SDK app. Throws for OAuth connections.
+- `isOAuthConnection(connection)`: Check if connection uses OAuth.
+- `getAccessToken(connection)`: Get OAuth access token for REST API calls.
+- `disposeConnection(connectionId)`: Dispose app and cached clients for a connection.
+- `disposeAll()`: Dispose all cached resources.
 
 ### Tree View
 - Hierarchy: Connection → FirestoreGroup → Collections → Documents → Subcollections.
@@ -110,7 +123,7 @@ Press **F5** in VS Code to launch the Extension Development Host for manual test
 
 ## Adding New Features
 
-- **New Firebase service**: Create in `src/firebase/`, follow `firestoreService.ts` pattern (constructor takes `App` + config, exposes async methods).
+- **New Firebase service**: Create in `src/firebase/`. For Firestore operations, use `getFirestoreClient(connection)`. For services needing Admin SDK (non-OAuth), use `getApp(connection)`. For OAuth-compatible services, implement REST API fallback (see `authService.ts` pattern).
 - **New tree group**: Add a node type in `nodes.ts`, add as child of `ConnectionNode` in its `getChildren()`.
 - **New command**: Register in the appropriate `src/commands/*.ts` file, add to `package.json` contributes commands/menus, and wire in `commands/index.ts`.
-- **New webview**: Extend `WebviewBase`, create a panel class, add media assets in `src/webview/media/`, add protocol messages in `protocol.ts`.
+- **New webview**: Extend `WebviewBase`, create a panel class, add media assets in `src/webview/media/`, add protocol messages in `protocol.ts`. Webview panels should lazily initialize services via `getService()` pattern for OAuth compatibility.

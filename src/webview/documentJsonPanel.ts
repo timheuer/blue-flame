@@ -4,7 +4,7 @@ import { WebviewToExtensionMessage } from "./protocol";
 import { FirestoreService } from "../firebase/firestoreService";
 import { Connection } from "../storage/types";
 import { buildDocumentUri } from "../firebase/firestoreFileSystemProvider";
-import type { App } from "firebase-admin/app";
+import { getFirestoreClient } from "../firebase/adminAppFactory";
 import { logger } from "../extension";
 
 function getDefaultMergeOnSave(): boolean {
@@ -12,13 +12,12 @@ function getDefaultMergeOnSave(): boolean {
 }
 
 export class DocumentJsonPanel extends WebviewBase {
-    private readonly service: FirestoreService;
+    private service: FirestoreService | undefined;
 
     constructor(
         extensionUri: vscode.Uri,
         private readonly connection: Connection,
-        private readonly docPath: string,
-        app: App
+        private readonly docPath: string
     ) {
         super(
             extensionUri,
@@ -26,7 +25,14 @@ export class DocumentJsonPanel extends WebviewBase {
             docPath,
             `document:${connection.id}:${docPath}`
         );
-        this.service = new FirestoreService(app, connection.databaseId);
+    }
+
+    private async getService(): Promise<FirestoreService> {
+        if (!this.service) {
+            const firestore = await getFirestoreClient(this.connection);
+            this.service = new FirestoreService(firestore);
+        }
+        return this.service;
     }
 
     protected getHtmlContent(webview: vscode.Webview): string {
@@ -73,7 +79,8 @@ export class DocumentJsonPanel extends WebviewBase {
                     return;
                 }
                 try {
-                    const result = await this.service.getDocument(message.docPath);
+                    const service = await this.getService();
+                    const result = await service.getDocument(message.docPath);
                     this.postMessage({
                         type: "documentLoaded",
                         docPath: message.docPath,
@@ -93,7 +100,8 @@ export class DocumentJsonPanel extends WebviewBase {
                 }
                 logger.debug(`Saving document: ${message.docPath} (merge: ${message.merge})`);
                 try {
-                    await this.service.setDocument(message.docPath, message.data, {
+                    const service = await this.getService();
+                    await service.setDocument(message.docPath, message.data, {
                         merge: message.merge,
                     });
                     this.postMessage({ type: "saveResult", success: true });
@@ -118,7 +126,8 @@ export class DocumentJsonPanel extends WebviewBase {
                 );
                 if (confirm === "Delete") {
                     try {
-                        await this.service.deleteDocument(message.docPath);
+                        const service = await this.getService();
+                        await service.deleteDocument(message.docPath);
                         logger.info(`Document deleted via webview: ${message.docPath}`);
                         vscode.window.showInformationMessage("Document deleted");
                         this.dispose();
@@ -146,7 +155,8 @@ export class DocumentJsonPanel extends WebviewBase {
         logger.debug(`Loading document: ${this.docPath}`);
         this.show();
         try {
-            const result = await this.service.getDocument(this.docPath);
+            const service = await this.getService();
+            const result = await service.getDocument(this.docPath);
             this.postMessage({
                 type: "documentLoaded",
                 docPath: this.docPath,

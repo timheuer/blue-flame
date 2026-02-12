@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import { ConnectionStorage } from "../storage/connections";
-import { getApp } from "../firebase/adminAppFactory";
+import { getApp, getFirestoreClient, isOAuthConnection } from "../firebase/adminAppFactory";
 import { FirestoreService } from "../firebase/firestoreService";
 import { AuthService } from "../firebase/authService";
+import { Connection } from "../storage/types";
 import {
     BaseNode,
     ConnectionNode,
@@ -73,8 +74,8 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getRootCollections(group: FirestoreGroupNode): Promise<BaseNode[]> {
-        const app = await getApp(group.connection);
-        const svc = new FirestoreService(app, group.connection.databaseId);
+        const firestore = await getFirestoreClient(group.connection);
+        const svc = new FirestoreService(firestore);
         const collections = await svc.listRootCollections();
         if (collections.length === 0) {
             return [new ErrorNode("No collections found")];
@@ -85,12 +86,12 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getDocuments(
-        connection: import("../storage/types").Connection,
+        connection: Connection,
         collectionPath: string,
         startAfterDocId?: string
     ): Promise<BaseNode[]> {
-        const app = await getApp(connection);
-        const svc = new FirestoreService(app, connection.databaseId);
+        const firestore = await getFirestoreClient(connection);
+        const svc = new FirestoreService(firestore);
         const result = await svc.listDocuments(collectionPath, {
             pageSize: getPageSize(),
             startAfterDocId,
@@ -117,8 +118,8 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getSubcollections(docNode: DocumentNode): Promise<BaseNode[]> {
-        const app = await getApp(docNode.connection);
-        const svc = new FirestoreService(app, docNode.connection.databaseId);
+        const firestore = await getFirestoreClient(docNode.connection);
+        const svc = new FirestoreService(firestore);
         const collections = await svc.listSubcollections(docNode.docPath);
         if (collections.length === 0) {
             return [];
@@ -129,11 +130,12 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getUsers(
-        connection: import("../storage/types").Connection,
+        connection: Connection,
         pageToken?: string
     ): Promise<BaseNode[]> {
-        const app = await getApp(connection);
-        const svc = new AuthService(app);
+        const svc = isOAuthConnection(connection)
+            ? new AuthService(connection)
+            : new AuthService(await getApp(connection));
         const result = await svc.listUsers(getUserListPageSize(), pageToken);
 
         if (result.users.length === 0 && !pageToken) {

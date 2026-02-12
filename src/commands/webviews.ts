@@ -3,7 +3,6 @@ import { CollectionNode, DocumentNode } from "../views/nodes";
 import { CollectionTablePanel } from "../webview/collectionTablePanel";
 import { DocumentJsonPanel } from "../webview/documentJsonPanel";
 import { buildDocumentUri } from "../firebase/firestoreFileSystemProvider";
-import { getApp } from "../firebase/adminAppFactory";
 import { logger } from "../extension";
 
 export function registerWebviewCommands(context: vscode.ExtensionContext): void {
@@ -13,12 +12,10 @@ export function registerWebviewCommands(context: vscode.ExtensionContext): void 
             async (node: CollectionNode) => {
                 if (!node) { return; }
                 logger.debug(`Opening collection table: ${node.collectionPath}`);
-                const app = await getApp(node.connection);
                 const panel = new CollectionTablePanel(
                     context.extensionUri,
                     node.connection,
-                    node.collectionPath,
-                    app
+                    node.collectionPath
                 );
                 await panel.loadInitialPage();
             }
@@ -29,12 +26,10 @@ export function registerWebviewCommands(context: vscode.ExtensionContext): void 
             async (node: DocumentNode) => {
                 if (!node) { return; }
                 logger.debug(`Opening document editor (webview): ${node.docPath}`);
-                const app = await getApp(node.connection);
                 const panel = new DocumentJsonPanel(
                     context.extensionUri,
                     node.connection,
-                    node.docPath,
-                    app
+                    node.docPath
                 );
                 await panel.loadDocument();
             }
