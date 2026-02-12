@@ -2,6 +2,9 @@
 
 A VS Code extension for browsing and managing Google Cloud Firestore databases and Firebase Authentication users. Navigate collections and documents in a tree view, browse collections in tabular webview panels, edit document JSON, and manage authentication users — all without leaving your editor.
 
+<img width="1715" height="990" alt="image" src="https://github.com/user-attachments/assets/6263a745-099b-4d7b-8bcb-bd006baa5594" />
+
+
 ## Features
 
 ### Firestore
