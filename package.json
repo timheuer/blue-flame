@@ -1,7 +1,7 @@
 {
   "name": "blue-flame",
   "displayName": "Blue Flame",
-  "description": "A Visual Studio Code extension for managing Firestore databases and Firebase Authentication users",
+  "description": "Browse, edit, and manage Firestore databases and Firebase Authentication users",
   "version": "0.0.0-placeholder",
   "author": {
     "name": "Tim Heuer",

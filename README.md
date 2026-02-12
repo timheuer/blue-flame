@@ -2,8 +2,7 @@
 
 A VS Code extension for browsing and managing Google Cloud Firestore databases and Firebase Authentication users. Navigate collections and documents in a tree view, browse collections in tabular webview panels, edit document JSON, and manage authentication users — all without leaving your editor.
 
-<img width="1715" height="990" alt="image" src="https://github.com/user-attachments/assets/6263a745-099b-4d7b-8bcb-bd006baa5594" />
-
+<img alt="image" src="https://github.com/user-attachments/assets/6263a745-099b-4d7b-8bcb-bd006baa5594" />
 
 ## Features
 
@@ -79,6 +78,7 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 ## Commands
 
 ### Connection Commands
+
 | Command | Description |
 |---------|-------------|
 | `Blue Flame: Add Connection` | Add a new Firebase connection |
@@ -86,6 +86,7 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 | `Blue Flame: Refresh` | Refresh the entire Explorer tree |
 
 ### Firestore Commands
+
 | Command | Description |
 |---------|-------------|
 | `Blue Flame: View Collection` | Open collection in a tabular webview |
@@ -99,6 +100,7 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 | `Blue Flame: Copy Document Path` | Copy the document's full path |
 
 ### Authentication Commands
+
 | Command | Description |
 |---------|-------------|
 | `Blue Flame: New User` | Create a new Firebase Authentication user |
