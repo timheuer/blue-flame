@@ -29,7 +29,7 @@ function initCollectionTable(path, size) {
         const msg = event.data;
         if (msg.type === "pageLoaded") {
             currentDocs = msg.docs;
-            
+
             // Calculate keys from the original stable order
             const allKeys = new Set();
             currentDocs.forEach((doc) => Object.keys(doc.fields).forEach((k) => allKeys.add(k)));
@@ -89,17 +89,17 @@ function renderTable(docs, hasMore) {
         docs.sort((a, b) => {
             const valA = sortField === 'ID' ? a.id : (a.fields[sortField]);
             const valB = sortField === 'ID' ? b.id : (b.fields[sortField]);
-            
+
             // Handle null/undefined
-            if (valA === valB) return 0;
-            if (valA === null || valA === undefined) return 1;
-            if (valB === null || valB === undefined) return -1;
+            if (valA === valB) { return 0; }
+            if (valA === null || valA === undefined) { return 1; }
+            if (valB === null || valB === undefined) { return -1; }
 
             const strA = String(valA).toLowerCase();
             const strB = String(valB).toLowerCase();
-            
-            if (strA < strB) return sortDirection === 'asc' ? -1 : 1;
-            if (strA > strB) return sortDirection === 'asc' ? 1 : -1;
+
+            if (strA < strB) { return sortDirection === 'asc' ? -1 : 1; }
+            if (strA > strB) { return sortDirection === 'asc' ? 1 : -1; }
             return 0;
         });
     }
@@ -110,10 +110,10 @@ function renderTable(docs, hasMore) {
     let html = `<vscode-table zebra-bordered-rows resizable>
         <vscode-table-header slot="header">
             <vscode-table-header-cell class="sortable-header" data-field="ID">ID${getSortIndicator('ID')}</vscode-table-header-cell>`;
-    keys.forEach((k) => { 
+    keys.forEach((k) => {
         html += `<vscode-table-header-cell class="sortable-header" data-field="${escapeHtml(String(k))}">
             ${escapeHtml(String(k))}${getSortIndicator(String(k))}
-        </vscode-table-header-cell>`; 
+        </vscode-table-header-cell>`;
     });
     html += `</vscode-table-header>
         <vscode-table-body slot="body">`;
@@ -135,7 +135,7 @@ function renderTable(docs, hasMore) {
     container.querySelectorAll(".sortable-header").forEach(header => {
         header.addEventListener("click", () => {
             const field = header.getAttribute("data-field");
-            if (!field) return;
+            if (!field) { return; }
 
             if (field === sortField) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -158,8 +158,12 @@ function renderTable(docs, hasMore) {
 
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    if (prevBtn) { prevBtn.disabled = pageStack.length === 0; }
-    if (nextBtn) { nextBtn.disabled = !hasMore; }
+    if (prevBtn) {
+        prevBtn.disabled = pageStack.length === 0;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = !hasMore;
+    }
 }
 
 /**
@@ -167,7 +171,7 @@ function renderTable(docs, hasMore) {
  * @returns {string}
  */
 function getSortIndicator(field) {
-    if (sortField !== field) return '';
+    if (sortField !== field) { return ''; }
     return sortDirection === 'asc' ? ' ▲' : ' ▼';
 }
 
