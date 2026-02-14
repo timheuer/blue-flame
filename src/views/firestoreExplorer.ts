@@ -114,8 +114,11 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         if (collections.length === 0) {
             return [new ErrorNode("No collections found")];
         }
+        const counts = await Promise.all(
+            collections.map((c) => svc.countDocuments(c.path))
+        );
         return collections.map(
-            (c) => new CollectionNode(group.connection, c.path, c.id)
+            (c, i) => new CollectionNode(group.connection, c.path, c.id, counts[i])
         );
     }
 
@@ -158,8 +161,11 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         if (collections.length === 0) {
             return [];
         }
+        const counts = await Promise.all(
+            collections.map((c) => svc.countDocuments(c.path))
+        );
         return collections.map(
-            (c) => new CollectionNode(docNode.connection, c.path, c.id)
+            (c, i) => new CollectionNode(docNode.connection, c.path, c.id, counts[i])
         );
     }
 

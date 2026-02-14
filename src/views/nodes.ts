@@ -198,12 +198,16 @@ export class CollectionNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
         public readonly collectionPath: string,
-        public readonly collectionId: string
+        public readonly collectionId: string,
+        public readonly documentCount?: number
     ) {
         super(collectionId, vscode.TreeItemCollapsibleState.Collapsed);
         this.contextValue = "collection";
         this.tooltip = collectionPath;
         this.iconPath = new vscode.ThemeIcon("folder");
+        if (documentCount !== undefined) {
+            this.description = `(${documentCount})`;
+        }
     }
 
     async getChildren(): Promise<BaseNode[]> {

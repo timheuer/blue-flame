@@ -146,4 +146,12 @@ export class FirestoreService {
         logger.debug(`Found ${collections.length} subcollections`);
         return collections.map((c) => ({ id: c.id, path: c.path }));
     }
+
+    async countDocuments(collectionPath: string): Promise<number> {
+        logger.debug(`Counting documents in: ${collectionPath}`);
+        const snapshot = await this.db.collection(collectionPath).count().get();
+        const count = snapshot.data().count;
+        logger.debug(`Collection ${collectionPath} has ${count} documents`);
+        return count;
+    }
 }
