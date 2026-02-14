@@ -247,11 +247,17 @@ export class LoadMoreNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
         public readonly collectionPath: string,
-        public readonly startAfterDocId: string
+        public readonly startAfterDocId: string,
+        public readonly parentCollection: CollectionNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMore";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMore",
+            title: "Load More Documents",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {

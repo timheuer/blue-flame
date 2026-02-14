@@ -16,6 +16,10 @@ let sortField = null;
 let sortDirection = 'asc';
 /** @type {string[]} */
 let currentKeys = [];
+/** @type {string | undefined} */
+let currentPageLastDocId;
+/** @type {number} */
+let totalCount = 0;
 
 /**
  * @param {string} path
@@ -29,6 +33,8 @@ function initCollectionTable(path, size) {
         const msg = event.data;
         if (msg.type === "pageLoaded") {
             currentDocs = msg.docs;
+            currentPageLastDocId = currentDocs.length > 0 ? currentDocs[currentDocs.length - 1].id : undefined;
+            totalCount = typeof msg.totalCount === "number" ? msg.totalCount : 0;
 
             // Calculate keys from the original stable order
             const allKeys = new Set();
@@ -46,9 +52,8 @@ function initCollectionTable(path, size) {
     });
 
     document.getElementById("nextBtn")?.addEventListener("click", () => {
-        const rows = document.querySelectorAll("#docTable tbody tr");
-        if (rows.length > 0) {
-            const lastId = rows[rows.length - 1].getAttribute("data-id") || "";
+        if (currentPageLastDocId) {
+            const lastId = currentPageLastDocId;
             pageStack.push(lastId);
             loadPage(lastId);
         }
@@ -81,80 +86,79 @@ function renderTable(docs, hasMore) {
 
     if (docs.length === 0) {
         container.innerHTML = "<p class='empty'>No documents found.</p>";
-        return;
-    }
+    } else {
+        // Sort docs if needed
+        if (sortField) {
+            docs.sort((a, b) => {
+                const valA = sortField === 'ID' ? a.id : (a.fields[sortField]);
+                const valB = sortField === 'ID' ? b.id : (b.fields[sortField]);
 
-    // Sort docs if needed
-    if (sortField) {
-        docs.sort((a, b) => {
-            const valA = sortField === 'ID' ? a.id : (a.fields[sortField]);
-            const valB = sortField === 'ID' ? b.id : (b.fields[sortField]);
+                // Handle null/undefined
+                if (valA === valB) { return 0; }
+                if (valA === null || valA === undefined) { return 1; }
+                if (valB === null || valB === undefined) { return -1; }
 
-            // Handle null/undefined
-            if (valA === valB) { return 0; }
-            if (valA === null || valA === undefined) { return 1; }
-            if (valB === null || valB === undefined) { return -1; }
+                const strA = String(valA).toLowerCase();
+                const strB = String(valB).toLowerCase();
 
-            const strA = String(valA).toLowerCase();
-            const strB = String(valB).toLowerCase();
+                if (strA < strB) { return sortDirection === 'asc' ? -1 : 1; }
+                if (strA > strB) { return sortDirection === 'asc' ? 1 : -1; }
+                return 0;
+            });
+        }
 
-            if (strA < strB) { return sortDirection === 'asc' ? -1 : 1; }
-            if (strA > strB) { return sortDirection === 'asc' ? 1 : -1; }
-            return 0;
-        });
-    }
+        // Use the stable keys calculated at page load
+        const keys = currentKeys;
 
-    // Use the stable keys calculated at page load
-    const keys = currentKeys;
-
-    let html = `<vscode-table zebra-bordered-rows resizable>
-        <vscode-table-header slot="header">
-            <vscode-table-header-cell class="sortable-header" data-field="ID">ID${getSortIndicator('ID')}</vscode-table-header-cell>`;
-    keys.forEach((k) => {
-        html += `<vscode-table-header-cell class="sortable-header" data-field="${escapeHtml(String(k))}">
-            ${escapeHtml(String(k))}${getSortIndicator(String(k))}
-        </vscode-table-header-cell>`;
-    });
-    html += `</vscode-table-header>
-        <vscode-table-body slot="body">`;
-
-    docs.forEach((doc) => {
-        html += `<vscode-table-row data-id="${escapeHtml(doc.id)}" data-path="${escapeHtml(doc.path)}" class="clickable">`;
-        html += `<vscode-table-cell>${escapeHtml(doc.id)}</vscode-table-cell>`;
+        let html = `<vscode-table zebra-bordered-rows resizable>
+            <vscode-table-header slot="header">
+                <vscode-table-header-cell class="sortable-header" data-field="ID">ID${getSortIndicator('ID')}</vscode-table-header-cell>`;
         keys.forEach((k) => {
-            const val = doc.fields[String(k)];
-            html += `<vscode-table-cell>${escapeHtml(preview(val))}</vscode-table-cell>`;
+            html += `<vscode-table-header-cell class="sortable-header" data-field="${escapeHtml(String(k))}">
+                ${escapeHtml(String(k))}${getSortIndicator(String(k))}
+            </vscode-table-header-cell>`;
         });
-        html += "</vscode-table-row>";
-    });
+        html += `</vscode-table-header>
+            <vscode-table-body slot="body">`;
 
-    html += `</vscode-table-body></vscode-table>`;
-    container.innerHTML = html;
-
-    // Add sort listeners
-    container.querySelectorAll(".sortable-header").forEach(header => {
-        header.addEventListener("click", () => {
-            const field = header.getAttribute("data-field");
-            if (!field) { return; }
-
-            if (field === sortField) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortField = field;
-                sortDirection = 'asc';
-            }
-            renderTable(currentDocs, hasMore);
+        docs.forEach((doc) => {
+            html += `<vscode-table-row data-id="${escapeHtml(doc.id)}" data-path="${escapeHtml(doc.path)}" class="clickable">`;
+            html += `<vscode-table-cell>${escapeHtml(doc.id)}</vscode-table-cell>`;
+            keys.forEach((k) => {
+                const val = doc.fields[String(k)];
+                html += `<vscode-table-cell>${escapeHtml(preview(val))}</vscode-table-cell>`;
+            });
+            html += "</vscode-table-row>";
         });
-    });
 
-    document.querySelectorAll("vscode-table-row.clickable").forEach((row) => {
-        row.addEventListener("click", () => {
-            const docPath = row.getAttribute("data-path");
-            if (docPath) {
-                vscode.postMessage({ type: "openDocument", docPath });
-            }
+        html += `</vscode-table-body></vscode-table>`;
+        container.innerHTML = html;
+
+        // Add sort listeners
+        container.querySelectorAll(".sortable-header").forEach(header => {
+            header.addEventListener("click", () => {
+                const field = header.getAttribute("data-field");
+                if (!field) { return; }
+
+                if (field === sortField) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortField = field;
+                    sortDirection = 'asc';
+                }
+                renderTable(currentDocs, hasMore);
+            });
         });
-    });
+
+        document.querySelectorAll("vscode-table-row.clickable").forEach((row) => {
+            row.addEventListener("click", () => {
+                const docPath = row.getAttribute("data-path");
+                if (docPath) {
+                    vscode.postMessage({ type: "openDocument", docPath });
+                }
+            });
+        });
+    }
 
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
@@ -163,6 +167,14 @@ function renderTable(docs, hasMore) {
     }
     if (nextBtn) {
         nextBtn.disabled = !hasMore;
+    }
+
+    const pageInfo = document.getElementById("pageInfo");
+    if (pageInfo) {
+        const pageNumber = totalCount > 0 ? pageStack.length + 1 : 0;
+        const totalPages = totalCount > 0 ? Math.ceil(totalCount / pageSize) : 0;
+        const documentLabel = totalCount === 1 ? "document" : "documents";
+        pageInfo.textContent = `Page ${pageNumber} of ${totalPages} • ${totalCount} ${documentLabel}`;
     }
 }
 

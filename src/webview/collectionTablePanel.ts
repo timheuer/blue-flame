@@ -8,12 +8,14 @@ import { getFirestoreClient } from "../firebase/adminAppFactory";
 import { DocumentJsonPanel } from "./documentJsonPanel";
 import { logger } from "../extension";
 
-function getPageSize(): number {
-    return vscode.workspace.getConfiguration("blue-flame").get<number>("pageSize", 25);
+function getTablePageSize(): number {
+    const config = vscode.workspace.getConfiguration("blue-flame");
+    return config.get<number>("tablePageSize", config.get<number>("pageSize", 25));
 }
 
 export class CollectionTablePanel extends WebviewBase {
     private service: FirestoreService | undefined;
+    private totalCount: number | undefined;
 
     constructor(
         extensionUri: vscode.Uri,
@@ -34,6 +36,14 @@ export class CollectionTablePanel extends WebviewBase {
             this.service = new FirestoreService(firestore);
         }
         return this.service;
+    }
+
+    private async getTotalCount(): Promise<number> {
+        if (this.totalCount === undefined) {
+            const service = await this.getService();
+            this.totalCount = await service.countDocuments(this.collectionPath);
+        }
+        return this.totalCount;
     }
 
     protected getHtmlContent(webview: vscode.Webview): string {
@@ -60,11 +70,12 @@ export class CollectionTablePanel extends WebviewBase {
     <div class="pagination">
         <vscode-button id="prevBtn" disabled>Previous</vscode-button>
         <vscode-button id="nextBtn" disabled>Next</vscode-button>
+        <span id="pageInfo" class="page-info">Page 0 of 0 • 0 documents</span>
     </div>
     <script nonce="${nonce}" type="module" src="${vscodeElementsUri}"></script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
     <script nonce="${nonce}">
-        initCollectionTable(${JSON.stringify(this.collectionPath)}, ${getPageSize()});
+        initCollectionTable(${JSON.stringify(this.collectionPath)}, ${getTablePageSize()});
     </script>
 </body>
 </html>`;
@@ -79,6 +90,7 @@ export class CollectionTablePanel extends WebviewBase {
                 }
                 try {
                     const service = await this.getService();
+                    const totalCount = await this.getTotalCount();
                     const result = await service.listDocuments(
                         message.collectionPath,
                         {
@@ -96,6 +108,7 @@ export class CollectionTablePanel extends WebviewBase {
                         docs,
                         hasMore: result.hasMore,
                         collectionPath: message.collectionPath,
+                        totalCount,
                     });
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : String(err);
@@ -130,8 +143,9 @@ export class CollectionTablePanel extends WebviewBase {
         this.show();
         try {
             const service = await this.getService();
+            const totalCount = await this.getTotalCount();
             const result = await service.listDocuments(this.collectionPath, {
-                pageSize: getPageSize(),
+                pageSize: getTablePageSize(),
             });
             const docs = result.docs.map((doc) => ({
                 id: doc.id,
@@ -143,6 +157,7 @@ export class CollectionTablePanel extends WebviewBase {
                 docs,
                 hasMore: result.hasMore,
                 collectionPath: this.collectionPath,
+                totalCount,
             });
         } catch (err: unknown) {
             const msg = err instanceof Error ? err.message : String(err);

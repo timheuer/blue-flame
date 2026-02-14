@@ -147,7 +147,9 @@ Install **Blue Flame** from the VS Code Marketplace, or search for "Blue Flame" 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `blue-flame.logLevel` | enum | `info` | Log level (`off`, `error`, `warn`, `info`, `debug`, `trace`) |
-| `blue-flame.pageSize` | number | `25` | Documents per page in tree view and collection tables (1–100) |
+| `blue-flame.pageSize` | number | `25` | Legacy fallback page size used when `treePageSize` / `tablePageSize` are not set (1–100) |
+| `blue-flame.treePageSize` | number | `25` | Items per page in tree view for Firestore documents and Storage files/folders (1–100) |
+| `blue-flame.tablePageSize` | number | `25` | Documents per page in collection table webview (1–100) |
 | `blue-flame.userListPageSize` | number | `25` | Users per page in Authentication tree (1–1000) |
 | `blue-flame.defaultMergeOnSave` | boolean | `true` | Merge with existing data vs overwrite when saving documents |
 | `blue-flame.documentOpenBehavior` | enum | `nativeEditor` | How to open documents: `nativeEditor` or `webviewPanel` |

@@ -22,8 +22,9 @@ import {
     ErrorNode,
 } from "./nodes";
 
-function getPageSize(): number {
-    return vscode.workspace.getConfiguration("blue-flame").get<number>("pageSize", 25);
+function getTreePageSize(): number {
+    const config = vscode.workspace.getConfiguration("blue-flame");
+    return config.get<number>("treePageSize", config.get<number>("pageSize", 25));
 }
 
 function getUserListPageSize(): number {
@@ -33,8 +34,26 @@ function getUserListPageSize(): number {
 export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNode> {
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<BaseNode | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+    private readonly collectionPageCursors = new Map<string, string>();
 
     constructor(private readonly connectionStorage: ConnectionStorage) { }
+
+    private getCollectionCursorKey(connection: Connection, collectionPath: string): string {
+        return `${connection.id}:${collectionPath}`;
+    }
+
+    setCollectionPageCursor(connection: Connection, collectionPath: string, startAfterDocId?: string): void {
+        const key = this.getCollectionCursorKey(connection, collectionPath);
+        if (startAfterDocId) {
+            this.collectionPageCursors.set(key, startAfterDocId);
+        } else {
+            this.collectionPageCursors.delete(key);
+        }
+    }
+
+    getCollectionPageCursor(connection: Connection, collectionPath: string): string | undefined {
+        return this.collectionPageCursors.get(this.getCollectionCursorKey(connection, collectionPath));
+    }
 
     refresh(node?: BaseNode): void {
         this._onDidChangeTreeData.fire(node);
@@ -72,15 +91,12 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
             }
 
             if (element instanceof CollectionNode) {
-                return this.getDocuments(element.connection, element.collectionPath);
+                const startAfterDocId = this.getCollectionPageCursor(element.connection, element.collectionPath);
+                return this.getDocuments(element, startAfterDocId);
             }
 
             if (element instanceof LoadMoreNode) {
-                return this.getDocuments(
-                    element.connection,
-                    element.collectionPath,
-                    element.startAfterDocId
-                );
+                return this.getDocuments(element.parentCollection, element.startAfterDocId);
             }
 
             if (element instanceof DocumentNode) {
@@ -123,14 +139,15 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getDocuments(
-        connection: Connection,
-        collectionPath: string,
+        collectionNode: CollectionNode,
         startAfterDocId?: string
     ): Promise<BaseNode[]> {
+        const connection = collectionNode.connection;
+        const collectionPath = collectionNode.collectionPath;
         const firestore = await getFirestoreClient(connection);
         const svc = new FirestoreService(firestore);
         const result = await svc.listDocuments(collectionPath, {
-            pageSize: getPageSize(),
+            pageSize: getTreePageSize(),
             startAfterDocId,
         });
 
@@ -148,7 +165,7 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
 
         if (result.hasMore) {
             const lastDoc = result.docs[result.docs.length - 1];
-            nodes.push(new LoadMoreNode(connection, collectionPath, lastDoc.id));
+            nodes.push(new LoadMoreNode(connection, collectionPath, lastDoc.id, collectionNode));
         }
 
         return nodes;
@@ -210,7 +227,7 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
             : new StorageService(await getApp(connection), bucketName);
 
         const bucket = svc.getBucketName();
-        const result = await svc.listAllFilesAndFolders(prefix, getPageSize(), pageToken);
+        const result = await svc.listAllFilesAndFolders(prefix, getTreePageSize(), pageToken);
 
         if (result.items.length === 0 && !pageToken) {
             return [new ErrorNode("No files found")];

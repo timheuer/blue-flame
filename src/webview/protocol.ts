@@ -12,6 +12,7 @@ export interface PageLoadedMessage {
     docs: { id: string; path: string; fields: Record<string, unknown> }[];
     hasMore: boolean;
     collectionPath: string;
+    totalCount: number;
 }
 
 export interface DocumentLoadedMessage {

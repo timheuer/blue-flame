@@ -63,7 +63,21 @@
           "default": 25,
           "minimum": 1,
           "maximum": 100,
-          "description": "Number of documents to load per page in tree view and collection tables"
+          "description": "Legacy page size fallback for tree and table pagination when the newer treePageSize/tablePageSize settings are not set"
+        },
+        "blue-flame.treePageSize": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of items to load per page in tree view (Firestore documents and Storage files/folders)"
+        },
+        "blue-flame.tablePageSize": {
+          "type": "number",
+          "default": 25,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of documents to load per page in collection table webview"
         },
         "blue-flame.userListPageSize": {
           "type": "number",
