@@ -63,13 +63,11 @@ jobs:
 
             - name: 📝 Build Summary
               if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-              shell: pwsh
+              shell: bash
               run: |
-                  @"
-                  ## Build Summary
-                  - Final extension version: `${{ steps.nbgv.outputs.SimpleVersion }}`
-                  - Marketplace link: https://marketplace.visualstudio.com/items?itemName=timheuer.blue-flame
-                  "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  echo "## Build Summary" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Final extension version: \`${{ steps.nbgv.outputs.SimpleVersion }}\`" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Marketplace link: https://marketplace.visualstudio.com/items?itemName=timheuer.blue-flame" >> "$GITHUB_STEP_SUMMARY"
 
             - name: ⬆️ Upload artifact
               uses: actions/upload-artifact@v4
