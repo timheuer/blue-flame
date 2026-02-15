@@ -28,7 +28,7 @@ export function registerFirestoreCommands(
             "blue-flame.refreshCollection",
             (node: CollectionNode) => {
                 logger.debug(`Refreshing collection: ${node.collectionPath}`);
-                treeProvider.setCollectionPageCursor(node.connection, node.collectionPath);
+                treeProvider.resetCollectionPageSize(node.connection, node.collectionPath);
                 treeProvider.refresh(node);
             }
         ),
@@ -38,7 +38,7 @@ export function registerFirestoreCommands(
             async (node: LoadMoreNode) => {
                 if (!node) { return; }
                 logger.debug(`Loading more documents for collection: ${node.collectionPath}`);
-                treeProvider.setCollectionPageCursor(node.connection, node.collectionPath, node.startAfterDocId);
+                treeProvider.incrementCollectionPageSize(node.connection, node.collectionPath);
                 treeProvider.refresh(node.parentCollection);
             }
         ),

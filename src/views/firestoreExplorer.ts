@@ -34,7 +34,9 @@ function getUserListPageSize(): number {
 export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNode> {
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<BaseNode | undefined | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-    private readonly collectionPageCursors = new Map<string, string>();
+    private readonly collectionPageSizes = new Map<string, number>();
+    private readonly userPageSizes = new Map<string, number>();
+    private readonly storagePageSizes = new Map<string, number>();
 
     constructor(private readonly connectionStorage: ConnectionStorage) { }
 
@@ -42,17 +44,47 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         return `${connection.id}:${collectionPath}`;
     }
 
-    setCollectionPageCursor(connection: Connection, collectionPath: string, startAfterDocId?: string): void {
+    incrementCollectionPageSize(connection: Connection, collectionPath: string): void {
         const key = this.getCollectionCursorKey(connection, collectionPath);
-        if (startAfterDocId) {
-            this.collectionPageCursors.set(key, startAfterDocId);
-        } else {
-            this.collectionPageCursors.delete(key);
-        }
+        this.collectionPageSizes.set(key, this.getCollectionPageSize(connection, collectionPath) + getTreePageSize());
     }
 
-    getCollectionPageCursor(connection: Connection, collectionPath: string): string | undefined {
-        return this.collectionPageCursors.get(this.getCollectionCursorKey(connection, collectionPath));
+    resetCollectionPageSize(connection: Connection, collectionPath: string): void {
+        this.collectionPageSizes.delete(this.getCollectionCursorKey(connection, collectionPath));
+    }
+
+    incrementUserPageSize(connection: Connection): void {
+        const key = connection.id;
+        this.userPageSizes.set(key, this.getUserPageSize(connection) + getUserListPageSize());
+    }
+
+    resetUserPageSize(connection: Connection): void {
+        this.userPageSizes.delete(connection.id);
+    }
+
+    incrementStoragePageSize(connection: Connection, prefix: string, bucketName: string): void {
+        const key = this.getStorageCursorKey(connection, prefix, bucketName);
+        this.storagePageSizes.set(key, this.getStoragePageSize(connection, prefix, bucketName) + getTreePageSize());
+    }
+
+    resetStoragePageSize(connection: Connection, prefix: string, bucketName: string): void {
+        this.storagePageSizes.delete(this.getStorageCursorKey(connection, prefix, bucketName));
+    }
+
+    private getCollectionPageSize(connection: Connection, collectionPath: string): number {
+        return this.collectionPageSizes.get(this.getCollectionCursorKey(connection, collectionPath)) ?? getTreePageSize();
+    }
+
+    private getUserPageSize(connection: Connection): number {
+        return this.userPageSizes.get(connection.id) ?? getUserListPageSize();
+    }
+
+    private getStorageCursorKey(connection: Connection, prefix: string, bucketName: string): string {
+        return `${connection.id}:${bucketName}:${prefix}`;
+    }
+
+    private getStoragePageSize(connection: Connection, prefix: string, bucketName: string): number {
+        return this.storagePageSizes.get(this.getStorageCursorKey(connection, prefix, bucketName)) ?? getTreePageSize();
     }
 
     refresh(node?: BaseNode): void {
@@ -79,24 +111,23 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
             }
 
             if (element instanceof AuthGroupNode) {
-                return this.getUsers(element.connection);
+                return this.getUsers(element);
             }
 
             if (element instanceof StorageGroupNode) {
-                return this.getStorageItems(element.connection, "", element.bucketName);
+                return this.getStorageItems(element.connection, "", element);
             }
 
             if (element instanceof StorageFolderNode) {
-                return this.getStorageItems(element.connection, element.folderPath, element.bucketName);
+                return this.getStorageItems(element.connection, element.folderPath, element, element.bucketName);
             }
 
             if (element instanceof CollectionNode) {
-                const startAfterDocId = this.getCollectionPageCursor(element.connection, element.collectionPath);
-                return this.getDocuments(element, startAfterDocId);
+                return this.getDocuments(element);
             }
 
             if (element instanceof LoadMoreNode) {
-                return this.getDocuments(element.parentCollection, element.startAfterDocId);
+                return this.getDocuments(element.parentCollection);
             }
 
             if (element instanceof DocumentNode) {
@@ -104,15 +135,15 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
             }
 
             if (element instanceof LoadMoreUsersNode) {
-                return this.getUsers(element.connection, element.pageToken);
+                return this.getUsers(element.parentAuthGroup);
             }
 
             if (element instanceof LoadMoreStorageNode) {
                 return this.getStorageItems(
                     element.connection,
                     element.prefix,
-                    element.bucketName,
-                    element.pageToken
+                    element.parentNode,
+                    element.bucketName
                 );
             }
 
@@ -139,16 +170,14 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     }
 
     private async getDocuments(
-        collectionNode: CollectionNode,
-        startAfterDocId?: string
+        collectionNode: CollectionNode
     ): Promise<BaseNode[]> {
         const connection = collectionNode.connection;
         const collectionPath = collectionNode.collectionPath;
         const firestore = await getFirestoreClient(connection);
         const svc = new FirestoreService(firestore);
         const result = await svc.listDocuments(collectionPath, {
-            pageSize: getTreePageSize(),
-            startAfterDocId,
+            pageSize: this.getCollectionPageSize(connection, collectionPath),
         });
 
         const nodes: BaseNode[] = await Promise.all(
@@ -186,16 +215,14 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         );
     }
 
-    private async getUsers(
-        connection: Connection,
-        pageToken?: string
-    ): Promise<BaseNode[]> {
+    private async getUsers(groupNode: AuthGroupNode): Promise<BaseNode[]> {
+        const connection = groupNode.connection;
         const svc = isOAuthConnection(connection)
             ? new AuthService(connection)
             : new AuthService(await getApp(connection));
-        const result = await svc.listUsers(getUserListPageSize(), pageToken);
+        const result = await svc.listUsers(this.getUserPageSize(connection));
 
-        if (result.users.length === 0 && !pageToken) {
+        if (result.users.length === 0) {
             return [new ErrorNode("No users found")];
         }
 
@@ -210,7 +237,7 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         );
 
         if (result.pageToken) {
-            nodes.push(new LoadMoreUsersNode(connection, result.pageToken));
+            nodes.push(new LoadMoreUsersNode(connection, groupNode));
         }
 
         return nodes;
@@ -219,17 +246,20 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
     async getStorageItems(
         connection: Connection,
         prefix: string,
-        bucketName?: string,
-        pageToken?: string
+        parentNode: StorageGroupNode | StorageFolderNode,
+        bucketName?: string
     ): Promise<BaseNode[]> {
         const svc = isOAuthConnection(connection)
             ? new StorageService(connection, bucketName)
             : new StorageService(await getApp(connection), bucketName);
 
         const bucket = svc.getBucketName();
-        const result = await svc.listAllFilesAndFolders(prefix, getTreePageSize(), pageToken);
+        const result = await svc.listAllFilesAndFolders(
+            prefix,
+            this.getStoragePageSize(connection, prefix, bucket)
+        );
 
-        if (result.items.length === 0 && !pageToken) {
+        if (result.items.length === 0) {
             return [new ErrorNode("No files found")];
         }
 
@@ -253,7 +283,7 @@ export class FirestoreExplorerProvider implements vscode.TreeDataProvider<BaseNo
         });
 
         if (result.nextPageToken) {
-            nodes.push(new LoadMoreStorageNode(connection, prefix, bucket, result.nextPageToken));
+            nodes.push(new LoadMoreStorageNode(connection, prefix, bucket, parentNode));
         }
 
         return nodes;
