@@ -17,3 +17,5 @@ CHANGELOG.md
 adminsdk.json
 .github/**
 version.json
+docs/**
+PRIVACY.md
