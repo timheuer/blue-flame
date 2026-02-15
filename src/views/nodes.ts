@@ -139,11 +139,16 @@ export class LoadMoreStorageNode extends BaseNode {
         public readonly connection: Connection,
         public readonly prefix: string,
         public readonly bucketName: string,
-        public readonly pageToken: string
+        public readonly parentNode: StorageGroupNode | StorageFolderNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMoreStorage";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMoreStorage",
+            title: "Load More Files",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {
@@ -182,11 +187,16 @@ export class UserNode extends BaseNode {
 export class LoadMoreUsersNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
-        public readonly pageToken: string
+        public readonly parentAuthGroup: AuthGroupNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMoreUsers";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMoreUsers",
+            title: "Load More Users",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {

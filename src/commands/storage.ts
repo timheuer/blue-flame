@@ -23,6 +23,8 @@ export function registerStorageCommands(
             "blue-flame.refreshStorageGroup",
             (node: StorageGroupNode) => {
                 logger.debug(`Refreshing storage group for connection: ${node.connection.name}`);
+                const bucketName = node.bucketName || `${node.connection.projectId}.firebasestorage.app`;
+                treeProvider.resetStoragePageSize(node.connection, "", bucketName);
                 treeProvider.refresh(node);
             }
         ),
@@ -31,6 +33,7 @@ export function registerStorageCommands(
             "blue-flame.refreshStorageFolder",
             (node: StorageFolderNode) => {
                 logger.debug(`Refreshing storage folder: ${node.folderPath}`);
+                treeProvider.resetStoragePageSize(node.connection, node.folderPath, node.bucketName);
                 treeProvider.refresh(node);
             }
         ),
@@ -39,7 +42,8 @@ export function registerStorageCommands(
             "blue-flame.loadMoreStorage",
             async (node: LoadMoreStorageNode) => {
                 logger.debug(`Loading more storage items for prefix: ${node.prefix}`);
-                treeProvider.refresh(node);
+                treeProvider.incrementStoragePageSize(node.connection, node.prefix, node.bucketName);
+                treeProvider.refresh(node.parentNode);
             }
         ),
 
