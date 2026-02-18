@@ -97,7 +97,9 @@ User-configurable settings are retrieved via `vscode.workspace.getConfiguration(
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
 | `logLevel` | enum | `"info"` | Log level for the extension |
-| `pageSize` | number | 25 | Documents per page in tree view and collection tables |
+| `pageSize` | number | 25 | Legacy fallback page size when `treePageSize`/`tablePageSize` are not set |
+| `treePageSize` | number | 25 | Items per page in tree view (Firestore documents and Storage files/folders) |
+| `tablePageSize` | number | 25 | Documents per page in collection table webview |
 | `userListPageSize` | number | 25 | Users per page in Authentication tree |
 | `defaultMergeOnSave` | boolean | true | Merge with existing data vs overwrite when saving documents |
 | `documentOpenBehavior` | enum | `"nativeEditor"` | How to open documents: `nativeEditor` or `webviewPanel` |

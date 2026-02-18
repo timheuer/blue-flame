@@ -112,7 +112,8 @@ export function registerAuthCommands(
         vscode.commands.registerCommand(
             "blue-flame.loadMoreUsers",
             async (node: LoadMoreUsersNode) => {
-                treeProvider.refresh(node);
+                treeProvider.incrementUserPageSize(node.connection);
+                treeProvider.refresh(node.parentAuthGroup);
             }
         ),
 
@@ -120,6 +121,7 @@ export function registerAuthCommands(
             "blue-flame.refreshAuthGroup",
             (node: AuthGroupNode) => {
                 logger.debug(`Refreshing auth group for connection: ${node.connection.name}`);
+                treeProvider.resetUserPageSize(node.connection);
                 treeProvider.refresh(node);
             }
         ),

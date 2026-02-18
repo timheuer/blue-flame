@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { FirestoreExplorerProvider } from "../views/firestoreExplorer";
-import { CollectionNode, DocumentNode, FirestoreGroupNode } from "../views/nodes";
+import { CollectionNode, DocumentNode, FirestoreGroupNode, LoadMoreNode } from "../views/nodes";
 import { getFirestoreClient } from "../firebase/adminAppFactory";
 import { FirestoreService } from "../firebase/firestoreService";
 import { DocumentJsonPanel } from "../webview/documentJsonPanel";
@@ -28,7 +28,18 @@ export function registerFirestoreCommands(
             "blue-flame.refreshCollection",
             (node: CollectionNode) => {
                 logger.debug(`Refreshing collection: ${node.collectionPath}`);
+                treeProvider.resetCollectionPageSize(node.connection, node.collectionPath);
                 treeProvider.refresh(node);
+            }
+        ),
+
+        vscode.commands.registerCommand(
+            "blue-flame.loadMore",
+            async (node: LoadMoreNode) => {
+                if (!node) { return; }
+                logger.debug(`Loading more documents for collection: ${node.collectionPath}`);
+                treeProvider.incrementCollectionPageSize(node.connection, node.collectionPath);
+                treeProvider.refresh(node.parentCollection);
             }
         ),
 

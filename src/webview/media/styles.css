@@ -30,8 +30,14 @@ h2 {
 
 .pagination {
     display: flex;
+    align-items: center;
     gap: 8px;
     margin-top: 12px;
+}
+
+.page-info {
+    margin-left: auto;
+    opacity: 0.8;
 }
 
 vscode-table-row.clickable {

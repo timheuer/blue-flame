@@ -61,11 +61,13 @@ jobs:
                   GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
                   GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
-            - name: 🔗 Marketplace Link
+            - name: 📝 Build Summary
               if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-              shell: pwsh
+              shell: bash
               run: |
-                  Write-Host "::notice::Published to VS Code Marketplace: https://marketplace.visualstudio.com/items?itemName=timheuer.blue-flame"
+                  echo "## Build Summary" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Final extension version: \`${{ steps.nbgv.outputs.SimpleVersion }}\`" >> "$GITHUB_STEP_SUMMARY"
+                  echo "- Marketplace link: https://marketplace.visualstudio.com/items?itemName=timheuer.blue-flame" >> "$GITHUB_STEP_SUMMARY"
 
             - name: ⬆️ Upload artifact
               uses: actions/upload-artifact@v4

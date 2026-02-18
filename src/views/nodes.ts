@@ -139,11 +139,16 @@ export class LoadMoreStorageNode extends BaseNode {
         public readonly connection: Connection,
         public readonly prefix: string,
         public readonly bucketName: string,
-        public readonly pageToken: string
+        public readonly parentNode: StorageGroupNode | StorageFolderNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMoreStorage";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMoreStorage",
+            title: "Load More Files",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {
@@ -182,11 +187,16 @@ export class UserNode extends BaseNode {
 export class LoadMoreUsersNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
-        public readonly pageToken: string
+        public readonly parentAuthGroup: AuthGroupNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMoreUsers";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMoreUsers",
+            title: "Load More Users",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {
@@ -198,12 +208,16 @@ export class CollectionNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
         public readonly collectionPath: string,
-        public readonly collectionId: string
+        public readonly collectionId: string,
+        public readonly documentCount?: number
     ) {
         super(collectionId, vscode.TreeItemCollapsibleState.Collapsed);
         this.contextValue = "collection";
         this.tooltip = collectionPath;
         this.iconPath = new vscode.ThemeIcon("folder");
+        if (documentCount !== undefined) {
+            this.description = `(${documentCount})`;
+        }
     }
 
     async getChildren(): Promise<BaseNode[]> {
@@ -243,11 +257,17 @@ export class LoadMoreNode extends BaseNode {
     constructor(
         public readonly connection: Connection,
         public readonly collectionPath: string,
-        public readonly startAfterDocId: string
+        public readonly startAfterDocId: string,
+        public readonly parentCollection: CollectionNode
     ) {
         super("Load more...", vscode.TreeItemCollapsibleState.None);
         this.contextValue = "loadMore";
         this.iconPath = new vscode.ThemeIcon("ellipsis");
+        this.command = {
+            command: "blue-flame.loadMore",
+            title: "Load More Documents",
+            arguments: [this],
+        };
     }
 
     async getChildren(): Promise<BaseNode[]> {
